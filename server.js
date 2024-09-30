@@ -82,15 +82,18 @@ app.post('/chat/voice', async (req, res) => {
     const reply = chatResponse.data.choices[0].message.content;
 
     // Google Cloud TTS API call
+
     const ttsResponse = await axios.post(
-      'https://texttospeech.googleapis.com/v1/text:synthesize', 
+    'https://texttospeech.googleapis.com/v1/text:synthesize', 
       {
         input: { text: reply },
         voice: { languageCode: 'en-US', ssmlGender: 'FEMALE' },
         audioConfig: { audioEncoding: 'MP3' }
       }, 
       {
-        headers: { 'Authorization': `Bearer AIzaSyAztd0NAZum9JIGrwBcmllFvmmKkfqdjBs` }
+        params: {
+          key: 'AIzaSyAztd0NAZum9JIGrwBcmllFvmmKkfqdjBs'  // Pass API key as a query parameter
+        }
       }
     );
 
