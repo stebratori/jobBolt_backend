@@ -1,11 +1,18 @@
 {
   "name": "my-node-app",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "error"
   },
   "keywords": [],
   "author": "Stefan Brankovic",
   "license": "ISC",
-  "des
+  "description": "",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  }
+}
