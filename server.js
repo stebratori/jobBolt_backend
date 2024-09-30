@@ -63,6 +63,46 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+// New Voice Endpoint using Google Cloud TTS
+app.post('/chat/voice', async (req, res) => {
+  const userMessage = req.body.message;
+
+  try {
+    // ChatGPT API call
+    const chatResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: userMessage }],
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const reply = chatResponse.data.choices[0].message.content;
+
+    // Google Cloud TTS API call
+    const ttsResponse = await axios.post(
+      'https://texttospeech.googleapis.com/v1/text:synthesize', 
+      {
+        input: { text: reply },
+        voice: { languageCode: 'en-US', ssmlGender: 'FEMALE' },
+        audioConfig: { audioEncoding: 'MP3' }
+      }, 
+      {
+        headers: { 'Authorization': `Bearer ${process.env.GOOGLE_CLOUD_API_KEY}` }
+      }
+    );
+
+    // Returning the audio content in base64
+    const audioContent = ttsResponse.data.audioContent;
+    res.json({ audio: audioContent, reply });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error communicating with ChatGPT or TTS API');
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
