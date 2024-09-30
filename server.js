@@ -90,7 +90,7 @@ app.post('/chat/voice', async (req, res) => {
         audioConfig: { audioEncoding: 'MP3' }
       }, 
       {
-        headers: { 'Authorization': `Bearer ${process.env.GOOGLE_CLOUD_API_KEY}` }
+        headers: { 'Authorization': `Bearer AIzaSyAztd0NAZum9JIGrwBcmllFvmmKkfqdjBs` }
       }
     );
 
