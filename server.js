@@ -20,13 +20,13 @@ app.use(express.json());
 // app.use(limiter);
 
 // Middleware to validate the client API key
-app.use((req, res, next) => {
-  const clientApiKey = req.headers['x-api-key'];
-  if (clientApiKey !== process.env.CLIENT_API_KEY) {
-    return res.status(403).send('Forbidden: Invalid API Key');
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   const clientApiKey = req.headers['x-api-key'];
+//   if (clientApiKey !== process.env.CLIENT_API_KEY) {
+//     return res.status(403).send('Forbidden: Invalid x-api-key');
+//   }
+//   next();
+// });
 
 // Endpoint to handle incoming messages
 app.post('/chat', async (req, res) => {
