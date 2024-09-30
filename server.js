@@ -3,7 +3,7 @@ const express = require('express');
 const axios = require('axios');
 //const rateLimit = require('express-rate-limit'); // For rate limiting
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON requests
 app.use(express.json());
