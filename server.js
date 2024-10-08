@@ -63,84 +63,50 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// Voice endpoint for sending entire conversation history
-app.postConversation('/chat/voice', async (req, res) => {
-  const userMessageArray = req.body.messages;
-
-  try {
-    // Send the message to ChatGPT API
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-4',
-        messages: userMessageArray.map(message => ({ role: 'user', content: message })),
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000,
-      }
-    );
-
-    // Send the ChatGPT response back to the client
-    res.json({ reply: response.data.choices[0].message.content });
-  } catch (error) {
-    if (error.response) {
-      console.error('[Heroku] Error response data:', error.response.data);
-    } else if (error.request) {
-      console.error('[Heroku] No response received:', error.request);
-    } else {
-      console.error('[Heroku] Error setting up the request:', error.message);
-    }
-    res.status(500).send('[Heroku] Error communicating with ChatGPT or TTS API');
-  }
-});
 
 
 // New Voice Endpoint using Google Cloud TTS
 app.post('/chat/voice', async (req, res) => {
-  const userMessage = req.body.message;
-
+  const userMessageArray = req.body.messages || [{ role: 'user', content: req.body.message }];
+  
   try {
-    // ChatGPT API call
+    // Step 1: ChatGPT API call
     const chatResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-4',
-      messages: [{ role: 'user', content: userMessage }],
+      messages: userMessageArray,
     }, {
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
-      }
+      },
+      timeout: 10000
     });
 
     const reply = chatResponse.data.choices[0].message.content;
 
-    // Google Cloud TTS API call
-
+    // Step 2: Google Cloud TTS API call (or any TTS service)
     const ttsResponse = await axios.post(
-    'https://texttospeech.googleapis.com/v1/text:synthesize', 
+      'https://texttospeech.googleapis.com/v1/text:synthesize', 
       {
         input: { text: reply },
         voice: { languageCode: 'en-US', ssmlGender: 'FEMALE' },
         audioConfig: { audioEncoding: 'MP3' }
       }, 
       {
-        params: {
-          key: 'AIzaSyAztd0NAZum9JIGrwBcmllFvmmKkfqdjBs'  // Pass API key as a query parameter
-        }
+        params: { key: process.env.GOOGLE_TTS_API_KEY }
       }
     );
 
-    // Returning the audio content in base64
+    // Step 3: Return both the text and audio
     const audioContent = ttsResponse.data.audioContent;
-    res.json({ audio: audioContent, reply });
+    res.json({ reply, audio: audioContent });
+
   } catch (error) {
-    console.error(error);
+    console.error('[Heroku] Error:', error.message || error.response?.data || error.request);
     res.status(500).send('[Heroku] Error communicating with ChatGPT or TTS API');
   }
 });
+
 
 // Start the server
 app.listen(PORT, () => {
