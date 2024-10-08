@@ -53,15 +53,51 @@ app.post('/chat', async (req, res) => {
     res.json({ reply: response.data.choices[0].message.content });
   } catch (error) {
     if (error.response) {
-      console.error('Error response data:', error.response.data);
+      console.error('[Heroku] Error response data:', error.response.data);
     } else if (error.request) {
-      console.error('No response received:', error.request);
+      console.error('[Heroku] No response received:', error.request);
     } else {
-      console.error('Error setting up the request:', error.message);
+      console.error('[Heroku] Error setting up the request:', error.message);
     }
-    res.status(500).send('Error communicating with ChatGPT');
+    res.status(500).send('[Heroku] Error communicating with ChatGPT');
   }
 });
+
+// Voice endpoint for sending entire conversation history
+app.postConversation('/chat/voice', async (req, res) => {
+  const userMessageArray = req.body.messages;
+
+  try {
+    // Send the message to ChatGPT API
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: userMessageArray.map(message => ({ role: 'user', content: message })),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      }
+    );
+
+    // Send the ChatGPT response back to the client
+    res.json({ reply: response.data.choices[0].message.content });
+  } catch (error) {
+    if (error.response) {
+      console.error('[Heroku] Error response data:', error.response.data);
+    } else if (error.request) {
+      console.error('[Heroku] No response received:', error.request);
+    } else {
+      console.error('[Heroku] Error setting up the request:', error.message);
+    }
+    res.status(500).send('[Heroku] Error communicating with ChatGPT or TTS API');
+  }
+});
+
 
 // New Voice Endpoint using Google Cloud TTS
 app.post('/chat/voice', async (req, res) => {
@@ -102,11 +138,11 @@ app.post('/chat/voice', async (req, res) => {
     res.json({ audio: audioContent, reply });
   } catch (error) {
     console.error(error);
-    res.status(500).send('Error communicating with ChatGPT or TTS API');
+    res.status(500).send('[Heroku] Error communicating with ChatGPT or TTS API');
   }
 });
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`[Heroku] Server is running on port ${PORT}`);
 });
