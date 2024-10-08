@@ -67,45 +67,52 @@ app.post('/chat', async (req, res) => {
 
 // New Voice Endpoint using Google Cloud TTS
 app.post('/chat/voice', async (req, res) => {
-  const userMessageArray = req.body.messages || [{ role: 'user', content: req.body.message }];
-  
+  // Check if the incoming request contains an array or a single message
+  const userMessages = Array.isArray(req.body.messages)
+    ? req.body.messages.map(message => ({ role: 'user', content: message }))
+    : [{ role: 'user', content: req.body.message }];
+
   try {
-    // Step 1: ChatGPT API call
-    const chatResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-4',
-      messages: userMessageArray,
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
+    // Make the request to ChatGPT API
+    const chatResponse = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: userMessages,
       },
-      timeout: 10000
-    });
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      }
+    );
 
     const reply = chatResponse.data.choices[0].message.content;
 
-    // Step 2: Google Cloud TTS API call (or any TTS service)
+    // Optionally make a TTS request (if you are using TTS)
     const ttsResponse = await axios.post(
-      'https://texttospeech.googleapis.com/v1/text:synthesize', 
+      'https://texttospeech.googleapis.com/v1/text:synthesize',
       {
         input: { text: reply },
         voice: { languageCode: 'en-US', ssmlGender: 'FEMALE' },
         audioConfig: { audioEncoding: 'MP3' }
-      }, 
+      },
       {
         params: { key: process.env.GOOGLE_TTS_API_KEY }
       }
     );
 
-    // Step 3: Return both the text and audio
     const audioContent = ttsResponse.data.audioContent;
     res.json({ reply, audio: audioContent });
 
   } catch (error) {
-    console.error('[Heroku] Error:', error.message || error.response?.data || error.request);
+    console.error('[Heroku] Error: ', error.message || error.response?.data || error.request);
     res.status(500).send('[Heroku] Error communicating with ChatGPT or TTS API');
   }
 });
+
 
 
 // Start the server
