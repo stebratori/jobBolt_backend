@@ -95,34 +95,39 @@ app.post('/chat/voice/completions', async (req, res) => {
   try {
     const conversationHistory = req.body.messages;
 
-    // Validate that the incoming request contains an array of strings
     if (!Array.isArray(conversationHistory)) {
       return res.status(400).send('Invalid request. Expected an array of messages.');
     }
 
     console.log(`[Heroku] Sending conversation history to OpenAI: ${JSON.stringify(conversationHistory)}`);
 
-    // Make the request to ChatGPT API
+    // ChatGPT API call
     const chatResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4', // Use the appropriate model
+        model: 'gpt-4',
         messages: conversationHistory,
       },
       {
         headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, // Ensure this key is correct
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         timeout: 10000,
       }
     );
 
-    // Extract and log ChatGPT's response
+    // Log the full response in case of error
+    if (chatResponse.status !== 200) {
+      console.error(`[Heroku] OpenAI API returned non-200 response: ${chatResponse.status}`);
+      console.error(`[Heroku] OpenAI API response data:`, chatResponse.data);
+      return res.status(chatResponse.status).send('Error communicating with ChatGPT API');
+    }
+
     const reply = chatResponse.data.choices[0].message.content;
     console.log(`[Heroku] ChatGPT Reply: ${reply}`);
 
-    // Make the request to Google Text-to-Speech API
+    // Google TTS API call
     const ttsResponse = await axios.post(
       'https://texttospeech.googleapis.com/v1/text:synthesize',
       {
@@ -135,14 +140,20 @@ app.post('/chat/voice/completions', async (req, res) => {
       }
     );
 
-    // Extract the audio content
+    // Log the full response in case of error
+    if (ttsResponse.status !== 200) {
+      console.error(`[Heroku] Google TTS API returned non-200 response: ${ttsResponse.status}`);
+      console.error(`[Heroku] Google TTS API response data:`, ttsResponse.data);
+      return res.status(ttsResponse.status).send('Error communicating with Google TTS API');
+    }
+
     const audioContent = ttsResponse.data.audioContent;
 
-    // Send both the ChatGPT reply and the synthesized audio back to the client
+    // Send back the reply and the audio content
     res.json({ reply, audio: audioContent });
 
   } catch (error) {
-    console.error(`[Heroku] Error communicating with ChatGPT API: ${error.message}`);
+    console.error(`[Heroku] General error: ${error.message}`);
     if (error.response) {
       console.error(`[Heroku] Response data:`, error.response.data);
     } else if (error.request) {
@@ -153,6 +164,7 @@ app.post('/chat/voice/completions', async (req, res) => {
     res.status(500).send('Error communicating with ChatGPT or TTS API');
   }
 });
+
 
 // A function to log errors with better readability
 function logError(location, error) {
