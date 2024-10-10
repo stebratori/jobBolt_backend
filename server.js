@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables from .env file
+//require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const axios = require('axios');
 //const rateLimit = require('express-rate-limit'); // For rate limiting
@@ -7,26 +7,6 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON requests
 app.use(express.json());
-
-// Rate limiting middleware
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // Limit each IP to 100 requests per `window` (15 minutes)
-//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-// });
-
-// // Apply the rate limiting middleware to all requests
-// app.use(limiter);
-
-// Middleware to validate the client API key
-// app.use((req, res, next) => {
-//   const clientApiKey = req.headers['x-api-key'];
-//   if (clientApiKey !== process.env.CLIENT_API_KEY) {
-//     return res.status(403).send('Forbidden: Invalid x-api-key');
-//   }
-//   next();
-// });
 
 // Endpoint to handle incoming messages
 app.post('/chat', async (req, res) => {
@@ -63,13 +43,11 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-
-
 // New Voice Endpoint using Google Cloud TTS
 app.post('/chat/voice', async (req, res) => {
   // Check if the incoming request contains an array or a single message
   const userMessages = Array.isArray(req.body.messages)
-    ? req.body.messages.map(message => ({ role: 'user', content: message }))
+    ? req.body.messages
     : [{ role: 'user', content: req.body.message }];
 
   try {
@@ -113,9 +91,93 @@ app.post('/chat/voice', async (req, res) => {
   }
 });
 
+app.post('/chat/voice/completions', async (req, res) => {
+  try {
+    const messages = req.body.messages;
 
+    // Validate that the incoming request contains an array of strings
+    if (!Array.isArray(messages)) {
+      return res.status(400).send('Invalid request. Expected an array of messages.');
+    }
+
+    // Map the conversation history to roles, alternating between 'user' and 'assistant'
+    const conversationHistory = messages.map((message, index) => ({
+      role: index % 2 === 0 ? 'user' : 'assistant', // Alternate between 'user' and 'assistant'
+      content: message,
+    }));
+
+    console.log(`[Heroku] Sending conversation history to OpenAI: ${JSON.stringify(conversationHistory)}`);
+
+    // Make the request to ChatGPT API
+    const chatResponse = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4', // Use the appropriate model
+        messages: conversationHistory,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, // Ensure this key is correct
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      }
+    );
+
+    // Extract and log ChatGPT's response
+    const reply = chatResponse.data.choices[0].message.content;
+    console.log(`[Heroku] ChatGPT Reply: ${reply}`);
+
+    // Send the ChatGPT reply back to the client
+    res.json({ reply });
+
+  } catch (error) {
+    console.error(`[Heroku] Error communicating with ChatGPT API: ${error.message}`);
+    if (error.response) {
+      console.error(`[Heroku] Response data:`, error.response.data);
+    } else if (error.request) {
+      console.error(`[Heroku] No response received:`, error.request);
+    } else {
+      console.error(`[Heroku] Error setting up the request:`, error.message);
+    }
+    res.status(500).send('Error communicating with ChatGPT or TTS API');
+  }
+});
+
+// A function to log errors with better readability
+function logError(location, error) {
+    console.error(`[Heroku] Error in ${location}: ${error.message}`);
+    if (error.response) {
+        console.error(`[Heroku] Response data:`, error.response.data);
+    } else if (error.request) {
+        console.error(`[Heroku] No response received:`, error.request);
+    } else {
+        console.error(`[Heroku] Request setup error:`, error.message);
+    }
+}
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`[Heroku] Server is running on port ${PORT}`);
 });
+
+
+// Rate limiting middleware
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // Limit each IP to 100 requests per `window` (15 minutes)
+//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+// });
+
+// // Apply the rate limiting middleware to all requests
+// app.use(limiter);
+
+// Middleware to validate the client API key
+// app.use((req, res, next) => {
+//   const clientApiKey = req.headers['x-api-key'];
+//   if (clientApiKey !== process.env.CLIENT_API_KEY) {
+//     return res.status(403).send('Forbidden: Invalid x-api-key');
+//   }
+//   next();
+// });
