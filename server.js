@@ -122,8 +122,24 @@ app.post('/chat/voice/completions', async (req, res) => {
     const reply = chatResponse.data.choices[0].message.content;
     console.log(`[Heroku] ChatGPT Reply: ${reply}`);
 
-    // Send the ChatGPT reply back to the client
-    res.json({ reply });
+    // Make the request to Google Text-to-Speech API
+    const ttsResponse = await axios.post(
+      'https://texttospeech.googleapis.com/v1/text:synthesize',
+      {
+        input: { text: reply },
+        voice: { languageCode: 'en-US', ssmlGender: 'FEMALE' },
+        audioConfig: { audioEncoding: 'MP3' }
+      },
+      {
+        params: { key: process.env.GOOGLE_TTS_API_KEY }
+      }
+    );
+
+    // Extract the audio content
+    const audioContent = ttsResponse.data.audioContent;
+
+    // Send both the ChatGPT reply and the synthesized audio back to the client
+    res.json({ reply, audio: audioContent });
 
   } catch (error) {
     console.error(`[Heroku] Error communicating with ChatGPT API: ${error.message}`);
