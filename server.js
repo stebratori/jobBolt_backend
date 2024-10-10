@@ -93,18 +93,12 @@ app.post('/chat/voice', async (req, res) => {
 
 app.post('/chat/voice/completions', async (req, res) => {
   try {
-    const messages = req.body.messages;
+    const conversationHistory = req.body.messages;
 
     // Validate that the incoming request contains an array of strings
-    if (!Array.isArray(messages)) {
+    if (!Array.isArray(conversationHistory)) {
       return res.status(400).send('Invalid request. Expected an array of messages.');
     }
-
-    // Map the conversation history to roles, alternating between 'user' and 'assistant'
-    const conversationHistory = messages.map((message, index) => ({
-      role: index % 2 === 0 ? 'user' : 'assistant', // Alternate between 'user' and 'assistant'
-      content: message,
-    }));
 
     console.log(`[Heroku] Sending conversation history to OpenAI: ${JSON.stringify(conversationHistory)}`);
 
