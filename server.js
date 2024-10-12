@@ -25,7 +25,7 @@ app.post('/chat', async (req, res) => {
           Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 10000,
+        timeout: 30000,
       }
     );
 
@@ -63,7 +63,7 @@ app.post('/chat/voice', async (req, res) => {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 10000,
+        timeout: 30000,
       }
     );
 
@@ -113,7 +113,7 @@ app.post('/chat/voice/completions', async (req, res) => {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 10000,
+        timeout: 30000,
       }
     );
 
