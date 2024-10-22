@@ -185,23 +185,22 @@ app.post('/generate-video', async (req, res) => {
   if (!text) {
     return res.status(400).json({ error: '[Heroku] Text is required to generate a video with HeyGen' });
   }
+  console.log(`[Heroku][HeyGen] Generate video with text: ${text}`);
 
   try {
-    // Step 1: Create Video from Text
     const videoResponse = await createVideoFromText(text);
     if (!videoResponse || !videoResponse.video_id) {
       return res.status(500).json({ error: '[Heroku] Failed to create video.' });
     }
+    console.log(`[Heroku][HeyGen] Video ID: ${videoResponse.video_id}`);
 
-    // Step 2: Fetch Video URL
     const videoURL = await fetchVideoURL(videoResponse.video_id);
     if (!videoURL) {
       return res.status(500).json({ error: '[Heroku] Failed to fetch video URL.' });
     }
+    console.log(`[Heroku][HeyGen] Video URL: ${videoURL}`);
 
-    // Return the video URL to the client
     res.json({ videoURL });
-
   } catch (error) {
     logError('[Heroku] Generate Video', error);
     res.status(500).json({ error: '[Heroku] Error generating video.' });
@@ -218,64 +217,77 @@ async function createVideoFromText(text) {
           {
             character: {
               type: 'avatar',
-              avatar_id: 'Daisy-inskirt-20220818', // Example avatar ID
-              avatar_style: 'normal'
+              avatar_id: 'Daisy-inskirt-20220818',
+              avatar_style: 'normal',
             },
             voice: {
               type: 'text',
               input_text: text,
-              voice_id: '2d5b0e6cf36f460aa7fc47e3eee4ba54' // Example voice ID
+              voice_id: '2d5b0e6cf36f460aa7fc47e3eee4ba54',
             },
             background: {
               type: 'color',
-              value: '#008000'
-            }
-          }
+              value: '#008000',
+            },
+          },
         ],
         dimension: { width: 1000, height: 562 },
         aspect_ratio: '16:9',
-        test: true
+        test: true,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'X-Api-Key': process.env.HEYGEN_API_KEY
+          'X-Api-Key': process.env.HEYGEN_API_KEY,
         },
-        timeout: 30000 // Adjust the timeout as needed
+        timeout: 30000,
       }
     );
     return response.data.data;
   } catch (error) {
     logError('[Heroku] Create Video from Text', error);
-    throw new Error('[Heroku] Failed to create video.');
+    throw new Error(`[Heroku] Failed to create video with text: ${text}`);
   }
 }
 
-// Helper function: Fetch video URL by video ID
-async function fetchVideoURL(videoID) {
-  try {
-    const response = await axios.get(
-      `https://api.heygen.com/v2/video_status.get?video_id=${videoID}`,
-      {
-        headers: {
-          'X-Api-Key': process.env.HEYGEN_API_KEY
-        },
-        timeout: 30000 // Adjust the timeout as needed
+// Helper function: Fetch video URL by video ID with retries
+async function fetchVideoURL(videoID, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`[Heroku][HeyGen] Attempt ${i + 1} to fetch video URL for ID: ${videoID}`);
+      const response = await axios.get(
+        `https://api.heygen.com/v2/video_status.get?video_id=${videoID}`,
+        {
+          headers: {
+            'X-Api-Key': process.env.HEYGEN_API_KEY,
+          },
+          timeout: 30000,
+        }
+      );
+
+      const videoData = response.data.data;
+      if (videoData && videoData.video_url) {
+        return videoData.video_url;
+      } else {
+        console.log('[Heroku] Video is not ready yet. Retrying...');
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retrying
       }
-    );
-
-    // Check if the video is ready and return the URL
-    const videoData = response.data.data;
-    if (videoData && videoData.video_url) {
-      return videoData.video_url;
-    } else {
-      console.log('[Heroku] Video is not ready yet.');
-      return null;
+    } catch (error) {
+      logError('[Heroku] Fetch Video URL', error);
     }
+  }
+  throw new Error('[Heroku] Exhausted retries. Failed to fetch video URL.');
+}
 
-  } catch (error) {
-    logError('[Heroku] Fetch Video URL', error);
-    throw new Error('[Heroku] Failed to fetch video URL.');
+// A function to log errors with better readability
+function logError(location, error) {
+  console.error(`[Heroku] Error in ${location}: ${error.message}`);
+  if (error.response) {
+    console.error(`[Heroku] Response data:`, error.response.data);
+  } else if (error.request) {
+    console.error(`[Heroku] No response received:`, error.request);
+  } else {
+    console.error(`[Heroku] Request setup error:`, error.message);
   }
 }
 
