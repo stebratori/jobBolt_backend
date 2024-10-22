@@ -252,7 +252,7 @@ async function createVideoFromText(text) {
 
 // Helper function: Fetch video URL by video ID with retries
 // Helper function: Fetch video URL by video ID with extended retry logic
-async function fetchVideoURL(videoID, retries = 12, delay = 5000) {
+async function fetchVideoURL(videoID, retries = 30, delay = 5000) {
   for (let i = 0; i < retries; i++) {
     try {
       console.log(`[Heroku][HeyGen] Attempt ${i + 1} to fetch video URL for ID: ${videoID}`);
