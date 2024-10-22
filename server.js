@@ -251,10 +251,13 @@ async function createVideoFromText(text) {
 }
 
 // Helper function: Fetch video URL by video ID with retries
-async function fetchVideoURL(videoID, retries = 3) {
+// Helper function: Fetch video URL by video ID with extended retry logic
+async function fetchVideoURL(videoID, retries = 12, delay = 5000) {
   for (let i = 0; i < retries; i++) {
     try {
       console.log(`[Heroku][HeyGen] Attempt ${i + 1} to fetch video URL for ID: ${videoID}`);
+      
+      // Make API call to fetch video URL
       const response = await axios.get(
         `https://api.heygen.com/v2/video_status.get?video_id=${videoID}`,
         {
@@ -265,19 +268,23 @@ async function fetchVideoURL(videoID, retries = 3) {
         }
       );
 
+      // Check if the video URL is available
       const videoData = response.data.data;
       if (videoData && videoData.video_url) {
+        console.log(`[Heroku][HeyGen] Video URL found: ${videoData.video_url}`);
         return videoData.video_url;
       } else {
-        console.log('[Heroku] Video is not ready yet. Retrying...');
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds before retrying
+        console.log(`[Heroku] Video not ready yet. Waiting for ${delay / 1000} seconds before retrying...`);
+        await new Promise(resolve => setTimeout(resolve, delay)); // Wait for the delay
       }
     } catch (error) {
       logError('[Heroku] Fetch Video URL', error);
+      await new Promise(resolve => setTimeout(resolve, delay)); // Wait before retrying after an error
     }
   }
-  throw new Error('[Heroku] Exhausted retries. Failed to fetch video URL.');
+  throw new Error('[Heroku] Exhausted retries. Failed to fetch video URL within the given time.');
 }
+
 
 // A function to log errors with better readability
 function logError(location, error) {
