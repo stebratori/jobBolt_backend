@@ -32,6 +32,11 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Default route for "/"
+app.get('/', (req, res) => {
+  res.send('Welcome to the Job Bolt API!');
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
