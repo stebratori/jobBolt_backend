@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
-import StripeWebhook from './services/stripe_webhook.js';
+import StripeService from './services/stripeService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 // Stripe webhook setup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
-const stripeWebhook = new StripeWebhook(stripeSecretKey, stripeEndpointSecret);
+const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
 
 // Configure middleware based on route
 app.use((req, res, next) => {
@@ -27,8 +27,10 @@ app.use('/api/brevo', brevoRoutes);
 
 // Stripe webhook route - must come before other routes that use express.json()
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  stripeWebhook.handleWebhook(req, res);
+  stripe.handleWebhook(req, res);
 });
+
+app.post('/create-checkout-session', (req, res) => stripe.createCheckoutSession(req, res));
 
 // Global error handler with detailed error information
 app.use((err, req, res, next) => {
@@ -50,10 +52,10 @@ app.use((err, req, res, next) => {
 
 // Default route for "/"
 app.get('/', (req, res) => {
-  res.send('Welcome to the Job Bolt API!');
+  res.send('Welcome to the Job Bolt API <3');
 });
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Ljubav svima <3`);
 });
