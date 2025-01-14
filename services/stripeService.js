@@ -52,11 +52,6 @@ export default class StripeService {
           await this.handlePaymentIntentSucceeded(paymentIntent);
           break;
         }
-        case 'payment_method.attached': {
-          console.log(`✅ PaymentMethod attached: ${event.data.object}`);
-          await this.handlePaymentMethodAttached(event.data.object);
-          break;
-        }
         case 'checkout.session.completed': {
           const session = event.data.object;
                 console.log('🛍️ Checkout Session Details:', {
