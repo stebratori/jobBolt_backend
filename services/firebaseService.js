@@ -75,6 +75,24 @@ export default class FirebaseService {
       throw error;
     }
   }
+  async getJobPostingsByCompanyId(companyId) {
+    try {
+      const querySnapshot = await this.firestore
+        .collection('job_postings')
+        .where('companyId', '==', companyId)
+        .get();
 
+      const jobPostings = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log('[Firebase] Retrieved job postings for company ID:', companyId);
+      return jobPostings;
+    } catch (error) {
+      console.error('[Firebase] Error retrieving job postings:', error);
+      throw error;
+    }
+  }
 
 }

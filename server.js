@@ -85,6 +85,18 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Firebase
+// Get Job Postings
+app.get('/api/job-postings/:companyId', async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId);
+    res.status(200).json(jobPostings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Default route for "/"
 app.get('/', (req, res) => {
   res.send('Welcome to the Job Bolt API <3');
