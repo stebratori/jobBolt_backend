@@ -74,7 +74,7 @@ export default class StripeService {
         throw new Error('Missing metadata in the session');
       }
       const firebaseService = new FirebaseService();
-      await firebaseService.updateFirestoreDocument(companyId, jobId);
+      await firebaseService.handleCheckoutSessionCompleted(companyId, jobId);
   
     } catch (error) {
       console.error('[Stripe] Error in handleCheckoutSessionCompleted:', error.message);
