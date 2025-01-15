@@ -5,6 +5,7 @@ import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
+import FirebaseService from './services/firebaseService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
 const heyGenService = new HeyGenService();
+const firebaseService = new FirebaseService(); 
 
 // Configure middleware based on route
 app.use((req, res, next) => {
