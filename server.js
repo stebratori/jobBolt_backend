@@ -39,7 +39,14 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   stripe.handleWebhook(req, res);
 });
 
-app.post('/create-checkout-session', (req, res) => stripe.createCheckoutSession(req, res));
+app.post('/create-checkout-session', async (req, res) => {
+  try {
+    const session = await stripe.createCheckoutSession(req.body);
+    res.json({ url: session.url });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Global error handler with detailed error information
 app.use((err, req, res, next) => {

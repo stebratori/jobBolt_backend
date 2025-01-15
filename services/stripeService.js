@@ -114,7 +114,7 @@ export default class StripeService {
     }
 
     try {
-      return await this.stripe.checkout.sessions.create({
+      const session = await this.stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
           {
@@ -130,9 +130,17 @@ export default class StripeService {
         success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/cancel`,
         metadata: {
-          companyId,
+          companyId, 
+          productId,
         },
+        // Additional recommended options
+        payment_intent_data: {
+          capture_method: 'automatic',
+        },
+        expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Session expires in 30 minutes
       });
+  
+      return session;
     } catch (error) {
       console.error('Error creating checkout session:', error.message);
       throw error;
