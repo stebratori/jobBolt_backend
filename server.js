@@ -4,6 +4,7 @@ import cors from 'cors';
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import StripeService from './services/stripeService.js';
+import HeyGenService from './services/heyGenService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use(cors({
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
+const heyGenService = new HeyGenService();
 
 // Configure middleware based on route
 app.use((req, res, next) => {
@@ -52,6 +54,16 @@ app.post('/create-checkout-session', async (req, res) => {
     res.json({ url: session.url });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Hey Gen
+app.get('/api/heygen/token', async (req, res) => {
+  try {
+    const token = await heyGenService.generateToken();
+    res.status(200).json({ token });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate HeyGen token' });
   }
 });
 

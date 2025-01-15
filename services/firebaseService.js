@@ -5,10 +5,16 @@ export default class FirebaseService {
     if (!admin.apps.length) {
     const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
-      // Initialize Firebase Admin SDK
-      admin.initializeApp({
-        credential: admin.credential.cert(firebaseConfig),
-      });
+    // Fix double-escaped newlines in private key
+    if (firebaseConfig.private_key) {
+        firebaseConfig.private_key = firebaseConfig.private_key
+          .replace(/\\\\n/g, '\n')  // Handle double-escaped
+          .replace(/\\n/g, '\n');    // Handle single-escaped
+        }
+        // Initialize Firebase Admin SDK
+        admin.initializeApp({
+            credential: admin.credential.cert(firebaseConfig),
+        });
 
       console.log('[Firebase] initialized');
     }
