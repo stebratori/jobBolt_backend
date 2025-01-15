@@ -1,11 +1,18 @@
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors'; 
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import StripeService from './services/stripeService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(cors({
+  origin: ['https://job-bolt.com', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5555'], 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+  credentials: true // Allow cookies and credentials
+}));
 
 // Stripe webhook setup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
