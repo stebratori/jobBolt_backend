@@ -88,14 +88,19 @@ app.use((err, req, res, next) => {
 // Firebase
 // Get Job Postings
 app.get('/api/job-postings/:companyId', async (req, res) => {
+  const { companyId } = req.params; // Extract the companyId from the URL
   try {
-    const { companyId } = req.params;
     const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId);
-    res.status(200).json(jobPostings);
+    res.status(200).json(jobPostings); // Send the response if successful
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('[Server] Error fetching job postings:', {
+      message: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: 'Internal Server Error' }); // Return error response
   }
 });
+
 
 // Default route for "/"
 app.get('/', (req, res) => {

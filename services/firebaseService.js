@@ -81,18 +81,27 @@ export default class FirebaseService {
         .collection('job_postings')
         .where('companyId', '==', companyId)
         .get();
-
+  
+      if (querySnapshot.empty) {
+        console.log('[Firebase] No job postings found for company ID:', companyId);
+        return []; // Return an empty array if no documents are found
+      }
+  
       const jobPostings = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
+  
       console.log('[Firebase] Retrieved job postings for company ID:', companyId);
       return jobPostings;
     } catch (error) {
-      console.error('[Firebase] Error retrieving job postings:', error);
-      throw error;
+      console.error('[Firebase] Error retrieving job postings:', {
+        message: error.message,
+        stack: error.stack,
+      });
+      throw new Error('Failed to fetch job postings'); // Rethrow the error for the route to handle
     }
   }
+  
 
 }
