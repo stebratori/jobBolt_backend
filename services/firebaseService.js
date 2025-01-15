@@ -1,0 +1,74 @@
+import admin from 'firebase-admin';
+
+export default class FirebaseService {
+  constructor() {
+    if (!admin.apps.length) {
+    const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+
+      // Initialize Firebase Admin SDK
+      admin.initializeApp({
+        credential: admin.credential.cert(firebaseConfig),
+      });
+
+      console.log('[Firebase] initialized');
+    }
+
+    // Firestore instance
+    this.firestore = admin.firestore();
+  }
+
+  /**
+   * Updates a Firestore document based on metadata
+   * @param {string} companyId - The company ID
+   * @param {string} jobId - The job ID
+   * First update the JobPosting, then update the Company changelog
+   */
+  async handleCheckoutSessionCompleted(companyId, jobId) {
+    try {
+      // Update the "job_postings" collection
+      const jobRef = this.firestore.collection('job_postings').doc(jobId);
+      const jobSnapshot = await jobRef.get();
+
+      if (!jobSnapshot.exists) {
+        throw new Error(`[Firebase] Job with ID ${jobId} does not exist`);
+      }
+
+      const jobData = jobSnapshot.data();
+
+      // Verify that the job's companyId matches
+      if (jobData.companyId !== companyId) {
+        throw new Error(`[Firebase] Job's companyId (${jobData.companyId}) does not match provided companyId (${companyId})`);
+      }
+
+      // Update the job's status to "active"
+      await jobRef.update({
+        status: 'active',
+      });
+
+      console.log(`[Firebase] Job with ID ${jobId} successfully updated state to active`);
+
+      // Update the "companies" collection
+      const companyRef = this.firestore.collection('companies').doc(companyId);
+      const companySnapshot = await companyRef.get();
+
+      if (!companySnapshot.exists) {
+        throw new Error(`[Firebase] Company with ID ${companyId} does not exist`);
+      }
+
+      const timestamp = Date.now();
+      const changelogEntry = `activatedJobId=${jobId}_at:${timestamp}`;
+
+      // Add new changelog entry to the array
+      await companyRef.update({
+        changelog: admin.firestore.FieldValue.arrayUnion(changelogEntry),
+      });
+
+      console.log(`[Firebase] Changelog updated for company ID ${companyId}`);
+    } catch (error) {
+      console.error('[Firebase] [Error] in handleCheckoutSessionCompleted:', error.message);
+      throw error;
+    }
+  }
+
+
+}

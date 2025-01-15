@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import FirebaseService from './firebase_service.js';
 
 export default class StripeService {
   constructor(secretKey, endpointSecret) {
@@ -7,17 +8,7 @@ export default class StripeService {
   }
 
   async handleWebhook(req, res) {
-    // Debug logging for incoming request
     console.log('========= WEBHOOK DEBUG =========');
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Stripe-Signature:', req.headers['stripe-signature']);
-    console.log('Body type:', typeof req.body);
-    console.log('Body is Buffer:', Buffer.isBuffer(req.body));
-    if (Buffer.isBuffer(req.body)) {
-        console.log('Body length:', req.body.length);
-        // Log first 100 characters of body as string
-        console.log('Body preview:', req.body.toString().substring(0, 100));
-    }
 
     const signature = req.headers['stripe-signature'];
     let event;
@@ -29,10 +20,6 @@ export default class StripeService {
         signature,
         this.endpointSecret
       );
-      // Log successful event details
-      console.log('✅ Event verified successfully');
-      console.log('Event Type:', event.type);
-      console.log('Event ID:', event.id);
     } catch (err) {
       console.error(`⚠️ Webhook signature verification failed: ${err.message}`);
       return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -43,27 +30,17 @@ export default class StripeService {
       switch (event.type) {
         case 'payment_intent.succeeded': {
           const paymentIntent = event.data.object;
-          console.log('💰 PaymentIntent Details:', {
-              id: paymentIntent.id,
-              amount: paymentIntent.amount,
-              metadata: paymentIntent.metadata,
-              customer: paymentIntent.customer
-          });
+          console.log('💰 PaymentIntent Details:', {id: paymentIntent.id, amount: paymentIntent.amount, metadata: paymentIntent.metadata, customer: paymentIntent.customer });
           await this.handlePaymentIntentSucceeded(paymentIntent);
           break;
         }
         case 'checkout.session.completed': {
           const session = event.data.object;
-                console.log('🛍️ Checkout Session Details:', {
-                    id: session.id,
-                    metadata: session.metadata,
-                    customer: session.customer,
-                    amount_total: session.amount_total
-                });
+                console.log('🛍️ Checkout Session Details:', {id: session.id, metadata: session.metadata, customer: session.customer, amount_total: session.amount_total });
                 break;
         }
         default:
-          console.warn(`⚠️ Unhandled event type: ${event.type}`);
+          console.warn(`[Stripe] Unhandled event type: ${event.type}`);
       }
 
       // Acknowledge receipt of the event
@@ -78,7 +55,7 @@ export default class StripeService {
         signatureHeader: signature,
         endpointSecretPrefix: this.endpointSecret?.substring(0, 10) // Just show prefix for security
       });
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      return res.status(400).send(`[Stripe] Webhook Error: ${err.message}`);
     }
     console.log('======= END WEBHOOK DEBUG =======\n');
   }
@@ -86,26 +63,28 @@ export default class StripeService {
   // Custom method to handle successful PaymentIntent
   async handlePaymentIntentSucceeded(paymentIntent) {
     // Add your business logic for successful payments here
-    console.log(`Processing successful payment for: ${paymentIntent}`);
-  }
-
-  // Custom method to handle attached PaymentMethod
-  async handlePaymentMethodAttached(paymentMethod) {
-    // Add your business logic for attached payment methods here
-    console.log(`Processing attached payment method: ${paymentMethod}`);
+    console.log(`[Stripe] Processing successful payment for: ${paymentIntent}`);
   }
 
   // Custom method to handle attached PaymentMethod
   async handleCheckoutSessionCompleted(session) {
-    // Add your business logic for attached payment methods here
-    console.log(`Checkout Session Completed: ${session}`);
-    
+    try {
+      const { companyId, productId, jobId } = session.metadata;
+      if (!companyId || !productId || !jobId) {
+        throw new Error('Missing metadata in the session');
+      }
+      const firebaseService = new FirebaseService();
+      await firebaseService.updateFirestoreDocument(companyId, jobId);
+  
+    } catch (error) {
+      console.error('[Stripe] Error in handleCheckoutSessionCompleted:', error.message);
+    }
   }
   
   async createCheckoutSession(params) {
-    const { companyId, productId, productPrice, origin } = params;
+    const { companyId, jobId, productId, productPrice, origin } = params;
 
-    if (!companyId || !productId || !productPrice || !origin) {
+    if (!companyId || !productId || !productPrice || !origin || !jobId) {
       throw new Error('Missing required parameters: companyId, productId, productPrice, and origin are required');
     }
 
@@ -132,12 +111,14 @@ export default class StripeService {
         metadata: {
           companyId, 
           productId,
+          jobId,
         },
         payment_intent_data: {
           capture_method: 'automatic',
           metadata: {
             companyId,
             productId,
+            jobId,
           },
         },
         expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Session expires in 30 minutes
