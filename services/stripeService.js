@@ -37,6 +37,7 @@ export default class StripeService {
         case 'checkout.session.completed': {
           const session = event.data.object;
                 console.log('🛍️ Checkout Session Details:', {id: session.id, metadata: session.metadata, customer: session.customer, amount_total: session.amount_total });
+                await this.handleCheckoutSessionCompleted(session)
                 break;
         }
         default:
