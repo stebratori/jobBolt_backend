@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import FirebaseService from './firebase_service.js';
+import FirebaseService from './services/firebase_service.js';
 
 export default class StripeService {
   constructor(secretKey, endpointSecret) {
