@@ -63,7 +63,7 @@ export default class StripeService {
   // Custom method to handle successful PaymentIntent
   async handlePaymentIntentSucceeded(paymentIntent) {
     // Add your business logic for successful payments here
-    console.log(`[Stripe] Processing successful payment for: ${paymentIntent}`);
+    console.log(`[Server Stripe]  Processing successful payment for: ${paymentIntent}`);
   }
 
   // Custom method to handle attached PaymentMethod
@@ -71,13 +71,13 @@ export default class StripeService {
     try {
       const { companyId, productId, jobId } = session.metadata;
       if (!companyId || !productId || !jobId) {
-        throw new Error('Missing metadata in the session');
+        throw new Error('[Server Stripe] Missing metadata in the session');
       }
       const firebaseService = new FirebaseService();
       await firebaseService.handleCheckoutSessionCompleted(companyId, jobId);
   
     } catch (error) {
-      console.error('[Stripe] Error in handleCheckoutSessionCompleted:', error.message);
+      console.error('[Server Stripe]  Error in handleCheckoutSessionCompleted:', error.message);
     }
   }
   
@@ -85,11 +85,11 @@ export default class StripeService {
     const { companyId, jobId, productId, productPrice, origin } = params;
 
     if (!companyId || !productId || !productPrice || !origin || !jobId) {
-      throw new Error('Missing required parameters: companyId, productId, productPrice, and origin are required');
+      throw new Error('[Server Stripe] Missing required parameters: companyId, productId, productPrice, and origin are required');
     }
 
     if (!Number.isInteger(productPrice) || productPrice <= 0) {
-      throw new Error('Product price must be a positive integer in cents');
+      throw new Error('[Server Stripe] Product price must be a positive integer in cents');
     }
 
     try {
@@ -126,7 +126,7 @@ export default class StripeService {
   
       return session;
     } catch (error) {
-      console.error('Error creating checkout session:', error.message);
+      console.error('[Server Stripe] Error creating checkout session:', error.message);
       throw error;
     }
   }
