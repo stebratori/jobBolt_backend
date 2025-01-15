@@ -133,9 +133,10 @@ export default class StripeService {
           companyId, 
           productId,
         },
-        // Additional recommended options
         payment_intent_data: {
           capture_method: 'automatic',
+          companyId, 
+          productId,
         },
         expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Session expires in 30 minutes
       });
