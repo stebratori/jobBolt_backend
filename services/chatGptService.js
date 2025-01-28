@@ -27,7 +27,10 @@ class ChatGptService {
       if (!reply) {
         throw new Error('Failed to retrieve a valid response from ChatGPT');
       }
-      return reply;
+      return {
+        reply,
+        usage: response.data?.usage || null
+      };
     } catch (error) {
       console.error('Error communicating with ChatGPT API:', error.response?.data || error.message);
       throw error;
@@ -47,7 +50,10 @@ class ChatGptService {
         .split('<Q>')
         .map(question => question.trim())
         .filter(question => question.length > 0);
-      return questionsArray;
+      return {
+        questions: questionsArray,
+        usage: response.data?.usage || null
+      };
     } catch (error) {
       console.error('Error generating interview questions:', error.response?.data || error.message);
       throw error;

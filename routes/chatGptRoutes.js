@@ -8,8 +8,8 @@ const router = express.Router();
 router.post('/send-message', async (req, res, next) => {
   try {
     const { conversation } = req.body;
-    const response = await chatGptService.sendMessage(conversation);
-    res.json({ response });
+    const { reply, usage } = await chatGptService.sendMessage(conversation);
+    res.json({ reply, usage });
   } catch (error) {
     next(error);
   }
@@ -19,8 +19,8 @@ router.post('/send-message', async (req, res, next) => {
 router.post('/generate-questions', async (req, res, next) => {
   try {
     const { startingPrompt, jobDescription } = req.body;
-    const questions = await chatGptService.generateQuestions(startingPrompt, jobDescription);
-    res.json({ questions });
+    const { questions, usage } = await chatGptService.generateQuestions(startingPrompt, jobDescription);
+    res.json({ questions, usage });
   } catch (error) {
     next(error);
   }

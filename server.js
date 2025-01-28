@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: ['https://job-bolt.com', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5555'], 
+  origin: ['https://job-bolt.com', 'http://localhost:5555'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
   credentials: true // Allow cookies and credentials
 }));
