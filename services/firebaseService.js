@@ -1,4 +1,6 @@
 import admin from 'firebase-admin';
+import { v4 as uuidv4 } from 'uuid';
+import URLManager from './URLManager.js';
 
 export default class FirebaseService {
   constructor() {
@@ -104,7 +106,6 @@ export default class FirebaseService {
     }
   }
   
-  // firebaseService.js
 async getJobPostingByCompanyIdAndJobId(companyId, jobId) {
   try {
     // Reference the specific document using the jobId
@@ -140,5 +141,30 @@ async getJobPostingByCompanyIdAndJobId(companyId, jobId) {
   }
 }
 
+async addNewJobPosting(jobPosting) {
+  try {
+    const jobID = uuidv4(); // Generate a unique job ID
+    const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+    
+    // Generate the URL for the job posting (you can add your logic here)
+    const url = URLManager.createUrlForJobPosting(jobID, jobPosting.companyId);
+    
+    const documentToStore = {
+      jobDescription: jobPosting.jobDescription,
+      jobTitle: jobPosting.jobTitle,
+      questions: jobPosting.questions,
+      companyId: jobPosting.companyId,
+      status: 'inactive',
+      interviewURL: url,
+    };
+
+    console.log("Attempting to save the job posting:", documentToStore);
+    await jobDocRef.set(documentToStore); // Save the document to Firestore
+    console.log("Job posting successfully stored.");
+  } catch (error) {
+    console.error("Error storing job posting:", error);
+    throw new Error('Failed to add new job posting');
+  }
+}
 
 }

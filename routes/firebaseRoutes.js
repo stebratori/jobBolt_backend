@@ -19,15 +19,25 @@ router.get('/job-postings/:companyId', async (req, res, next) => {
 router.get('/job-posting/:companyId/:jobId', async (req, res, next) => {
     const { companyId, jobId } = req.params;
     try {
-      const jobPosting = await firebaseService.getJobPostingByCompanyIdAndJobId(companyId, jobId); 
-      if (jobPosting) {
+        const jobPosting = await firebaseService.getJobPostingByCompanyIdAndJobId(companyId, jobId); 
+        if (jobPosting) {
         res.status(200).json(jobPosting);
-      } else {
+        } else {
         res.status(404).json({ error: 'Job posting not found' });
-      }
+        }
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post('/job-posting', async (req, res, next) => {
+    const jobPosting = req.body;
+    try {
+      await firebaseService.addNewJobPosting(jobPosting);
+      res.status(201).json({ message: 'Job posting created successfully' });
     } catch (error) {
       next(error);
     }
-  });
+});
 
 export default router;
