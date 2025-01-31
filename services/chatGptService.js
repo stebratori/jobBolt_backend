@@ -23,14 +23,16 @@ class ChatGptService {
         model: this.model,
         messages: conversation,
       });
+      console.log("Full OpenAI API Response for sendMessage:", JSON.stringify(response.data, null, 2));
+
       const reply = response.data?.choices[0]?.message?.content;
+      const completion_tokens = response.data?.usage?.completion_tokens || null;
+      const prompt_tokens = response.data?.usage?.prompt_tokens || null;
+
       if (!reply) {
         throw new Error('Failed to retrieve a valid response from ChatGPT');
       }
-      return {
-        reply,
-        usage: response.data?.usage || null
-      };
+      return { reply, completion_tokens, prompt_tokens };
     } catch (error) {
       console.error('Error communicating with ChatGPT API:', error.response?.data || error.message);
       throw error;
@@ -45,6 +47,7 @@ class ChatGptService {
         model: this.model,
         messages: [message],
       });
+      console.log("Full OpenAI API Response for generateQuestions:", JSON.stringify(response.data, null, 2));
       const questionsText = response.data.choices[0].message.content;
       const questionsArray = questionsText
         .split('<Q>')
@@ -52,7 +55,8 @@ class ChatGptService {
         .filter(question => question.length > 0);
       return {
         questions: questionsArray,
-        usage: response.data?.usage || null
+        completion_tokens: response.data?.usage.completion_tokens || null,
+        prompt_tokens: response.data?.usage.prompt_tokens || null
       };
     } catch (error) {
       console.error('Error generating interview questions:', error.response?.data || error.message);
