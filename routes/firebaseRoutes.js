@@ -1,14 +1,15 @@
 // firebaseRoutes.js
 import express from 'express';
-import firebaseService from '../services/firebaseService.js'; 
+import FirebaseService from '../services/firebaseService.js'; 
 
 const router = express.Router();
+const firebaseService = new FirebaseService();
 
 // Route for getting job postings by company ID
 router.get('/job-postings/:companyId', async (req, res, next) => {
   const { companyId } = req.params;
   try {
-    const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId);
+    const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId); 
     res.status(200).json(jobPostings);
   } catch (error) {
     next(error);
