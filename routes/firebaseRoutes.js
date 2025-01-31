@@ -5,7 +5,7 @@ import FirebaseService from '../services/firebaseService.js';
 const router = express.Router();
 const firebaseService = new FirebaseService();
 
-// Route for getting job postings by company ID
+
 router.get('/job-postings/:companyId', async (req, res, next) => {
   const { companyId } = req.params;
   try {
@@ -16,6 +16,18 @@ router.get('/job-postings/:companyId', async (req, res, next) => {
   }
 });
 
-// Add more Firebase routes here as needed (e.g., createJobPosting, updateJobPosting, etc.)
+router.get('/job-posting/:companyId/:jobId', async (req, res, next) => {
+    const { companyId, jobId } = req.params;
+    try {
+      const jobPosting = await firebaseService.getJobPostingByCompanyIdAndJobId(companyId, jobId); 
+      if (jobPosting) {
+        res.status(200).json(jobPosting);
+      } else {
+        res.status(404).json({ error: 'Job posting not found' });
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
 
 export default router;

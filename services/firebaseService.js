@@ -104,5 +104,41 @@ export default class FirebaseService {
     }
   }
   
+  // firebaseService.js
+async getJobPostingByCompanyIdAndJobId(companyId, jobId) {
+  try {
+    // Reference the specific document using the jobId
+    const jobDocRef = this.firestore.collection('job_postings').doc(jobId);
+    const jobDoc = await jobDocRef.get();
+    
+    if (jobDoc.exists) {
+      const data = jobDoc.data();
+      
+      // Verify that the companyId matches
+      if (data.companyId === companyId) {
+        const jobPosting = {
+          id: jobDoc.id, // Firebase-assigned document ID
+          jobDescription: data.jobDescription,
+          jobTitle: data.jobTitle,
+          questions: data.questions,
+          companyId: data.companyId,
+          interviewURL: data.interviewURL,
+          status: data.status,
+        };
+        return jobPosting;
+      } else {
+        console.log(`No job posting found for company ID: ${companyId} with job ID: ${jobId}`);
+        return null;
+      }
+    } else {
+      console.log(`Job posting with ID: ${jobId} does not exist.`);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching job posting:", error);
+    throw error;
+  }
+}
+
 
 }
