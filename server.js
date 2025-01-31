@@ -1,8 +1,13 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors'; 
+
+// Routes
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
+import firebaseRoutes from './routes/firebaseRoutes.js';
+
+// Services
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
 import FirebaseService from './services/firebaseService.js';
@@ -20,6 +25,7 @@ app.use(cors({
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
+// Services initialization
 const heyGenService = new HeyGenService();
 const firebaseService = new FirebaseService(); 
 
@@ -35,6 +41,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/chatgpt', chatGptRoutes);
 app.use('/api/brevo', brevoRoutes);
+app.use('/api/firebase', firebaseRoutes);
 
 // Middleware to conditionally apply JSON parsing
 app.use((req, res, next) => {
@@ -89,19 +96,19 @@ app.use((err, req, res, next) => {
 
 // Firebase
 // Get Job Postings
-app.get('/api/job-postings/:companyId', async (req, res) => {
-  const { companyId } = req.params; // Extract the companyId from the URL
-  try {
-    const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId);
-    res.status(200).json(jobPostings); // Send the response if successful
-  } catch (error) {
-    console.error('[Server] Error fetching job postings:', {
-      message: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({ error: 'Internal Server Error' }); // Return error response
-  }
-});
+// app.get('/api/job-postings/:companyId', async (req, res) => {
+//   const { companyId } = req.params; // Extract the companyId from the URL
+//   try {
+//     const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId);
+//     res.status(200).json(jobPostings); // Send the response if successful
+//   } catch (error) {
+//     console.error('[Server] Error fetching job postings:', {
+//       message: error.message,
+//       stack: error.stack,
+//     });
+//     res.status(500).json({ error: 'Internal Server Error' }); // Return error response
+//   }
+// });
 
 
 // Default route for "/"

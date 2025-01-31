@@ -75,6 +75,7 @@ export default class FirebaseService {
       throw error;
     }
   }
+  
   async getJobPostingsByCompanyId(companyId) {
     try {
       const querySnapshot = await this.firestore
