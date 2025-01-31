@@ -23,7 +23,7 @@ class ChatGptService {
         model: this.model,
         messages: conversation,
       });
-      console.log("Full OpenAI API Response for sendMessage:", JSON.stringify(response.data, null, 2));
+      console.log("Usage object:", JSON.stringify(response.data?.usage, null, 2));
 
       const reply = response.data?.choices[0]?.message?.content;
       const completion_tokens = response.data?.usage?.completion_tokens || null;
@@ -47,7 +47,7 @@ class ChatGptService {
         model: this.model,
         messages: [message],
       });
-      console.log("Full OpenAI API Response for generateQuestions:", JSON.stringify(response.data, null, 2));
+      console.log("Usage object:", JSON.stringify(response.data?.usage, null, 2));
       const questionsText = response.data.choices[0].message.content;
       const questionsArray = questionsText
         .split('<Q>')
