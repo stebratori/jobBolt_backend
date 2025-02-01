@@ -216,6 +216,29 @@ export default class FirebaseService {
     }
   }
 
+  // DEMO ONLY Method
+  async storeInterviewFeedback(feedback) {
+    try {
+      const collectionRef = this.firestore.collection('interview_analysis');
+
+      const documentToStore = {
+        date: feedback.date,
+        overall_rating: feedback.overall_rating,
+        pass_to_next_stage: feedback.pass_to_next_stage,
+        final_feedback: feedback.final_feedback,
+        jobId: feedback.jobId,
+        username: feedback.username,
+      };
+
+      console.log('Attempting to save the interview feedback:', documentToStore);
+      await collectionRef.add(documentToStore);  
+      console.log('Interview feedback successfully stored.');
+    } catch (error) {
+      console.error('Error storing interview feedback:', error);
+      throw error;  // Rethrow to allow the backend route to handle it
+    }
+  }
+
 
 
 }

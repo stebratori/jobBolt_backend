@@ -79,4 +79,16 @@ router.get('/interview-feedback', async (req, res, next) => {
     }
 });
 
+// DEMO METHOD
+// Route for storing interview feedback
+router.post('/interview-feedback', async (req, res, next) => {
+    const feedback = req.body;
+    try {
+      await firebaseService.storeInterviewFeedback(feedback);
+      res.status(201).json({ message: 'Interview feedback stored successfully' });
+    } catch (error) {
+      next(error);  // Pass the error to the global error handler
+    }
+});
+
 export default router;
