@@ -55,8 +55,19 @@ router.get('/company/:companyId', async (req, res, next) => {
     } catch (error) {
       next(error);
     }
-  });
+});
 
-  
+  // Route for adding a new company
+router.post('/company', async (req, res, next) => {
+    const company = req.body;
+    try {
+      await firebaseService.addNewCompany(company);
+      res.status(201).json({ message: 'Company created successfully' });
+    } catch (error) {
+      next(error);
+    }
+});
+
+
 
 export default router;

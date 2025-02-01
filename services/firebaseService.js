@@ -13,7 +13,7 @@ export default class FirebaseService {
           .replace(/\\\\n/g, '\n')  // Handle double-escaped
           .replace(/\\n/g, '\n');    // Handle single-escaped
         }
-        // Initialize Firebase Admin SDK
+        
         admin.initializeApp({
             credential: admin.credential.cert(firebaseConfig),
         });
@@ -21,7 +21,6 @@ export default class FirebaseService {
       console.log('[Firebase] initialized');
     }
 
-    // Firestore instance
     this.firestore = admin.firestore();
   }
 
@@ -33,7 +32,6 @@ export default class FirebaseService {
    */
   async handleCheckoutSessionCompleted(companyId, jobId) {
     try {
-      // Update the "job_postings" collection
       const jobRef = this.firestore.collection('job_postings').doc(jobId);
       const jobSnapshot = await jobRef.get();
 
@@ -43,19 +41,13 @@ export default class FirebaseService {
 
       const jobData = jobSnapshot.data();
 
-      // Verify that the job's companyId matches
       if (jobData.companyId !== companyId) {
         throw new Error(`[Firebase] Job's companyId (${jobData.companyId}) does not match provided companyId (${companyId})`);
       }
 
-      // Update the job's status to "active"
       await jobRef.update({
         status: 'active',
       });
-
-      console.log(`[Firebase] Job with ID ${jobId} successfully updated state to active`);
-
-      // Update the "companies" collection
       const companyRef = this.firestore.collection('companies').doc(companyId);
       const companySnapshot = await companyRef.get();
 
@@ -66,7 +58,6 @@ export default class FirebaseService {
       const timestamp = Date.now();
       const changelogEntry = `activatedJobId=${jobId}_at:${timestamp}`;
 
-      // Add new changelog entry to the array
       await companyRef.update({
         changelog: admin.firestore.FieldValue.arrayUnion(changelogEntry),
       });
@@ -87,7 +78,7 @@ export default class FirebaseService {
   
       if (querySnapshot.empty) {
         console.log('[Firebase] No job postings found for company ID:', companyId);
-        return []; // Return an empty array if no documents are found
+        return []; 
       }
   
       const jobPostings = querySnapshot.docs.map((doc) => ({
@@ -95,30 +86,27 @@ export default class FirebaseService {
         ...doc.data(),
       }));
   
-      console.log('[Firebase] Retrieved job postings for company ID:', companyId);
       return jobPostings;
     } catch (error) {
       console.error('[Firebase] Error retrieving job postings:', {
         message: error.message,
         stack: error.stack,
       });
-      throw new Error('Failed to fetch job postings'); // Rethrow the error for the route to handle
+      throw new Error('Failed to fetch job postings'); 
     }
   }
   
   async getJobPostingByCompanyIdAndJobId(companyId, jobId) {
     try {
-      // Reference the specific document using the jobId
       const jobDocRef = this.firestore.collection('job_postings').doc(jobId);
       const jobDoc = await jobDocRef.get();
       
       if (jobDoc.exists) {
         const data = jobDoc.data();
         
-        // Verify that the companyId matches
         if (data.companyId === companyId) {
           const jobPosting = {
-            id: jobDoc.id, // Firebase-assigned document ID
+            id: jobDoc.id, 
             jobDescription: data.jobDescription,
             jobTitle: data.jobTitle,
             questions: data.questions,
@@ -145,8 +133,6 @@ export default class FirebaseService {
     try {
       const jobID = uuidv4(); // Generate a unique job ID
       const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
-      
-      // Generate the URL for the job posting (you can add your logic here)
       const url = URLManager.createUrlForJobPosting(jobID, jobPosting.companyId);
       
       const documentToStore = {
@@ -157,10 +143,7 @@ export default class FirebaseService {
         status: 'inactive',
         interviewURL: url,
       };
-
-      console.log("Attempting to save the job posting:", documentToStore);
-      await jobDocRef.set(documentToStore); // Save the document to Firestore
-      console.log("Job posting successfully stored.");
+      await jobDocRef.set(documentToStore); 
     } catch (error) {
       console.error("Error storing job posting:", error);
       throw new Error('Failed to add new job posting');
@@ -188,6 +171,23 @@ export default class FirebaseService {
       throw error;
     }
   }
+
+  async addNewCompany(company) {
+    try {
+      const docRef = this.firestore.collection('companies').doc(company.id);
+      const formattedDate = new Date(Date.now()).toISOString();
+      const documentToStore = {
+        name: company.name,
+        email: company.email,
+        changelog: [`created_${formattedDate}`],
+      };
+      await docRef.set(documentToStore);
+    } catch (error) {
+      console.error("Error adding new company:", error);
+      throw error;
+    }
+  }
+
 
 
 }
