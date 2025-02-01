@@ -106,65 +106,88 @@ export default class FirebaseService {
     }
   }
   
-async getJobPostingByCompanyIdAndJobId(companyId, jobId) {
-  try {
-    // Reference the specific document using the jobId
-    const jobDocRef = this.firestore.collection('job_postings').doc(jobId);
-    const jobDoc = await jobDocRef.get();
-    
-    if (jobDoc.exists) {
-      const data = jobDoc.data();
+  async getJobPostingByCompanyIdAndJobId(companyId, jobId) {
+    try {
+      // Reference the specific document using the jobId
+      const jobDocRef = this.firestore.collection('job_postings').doc(jobId);
+      const jobDoc = await jobDocRef.get();
       
-      // Verify that the companyId matches
-      if (data.companyId === companyId) {
-        const jobPosting = {
-          id: jobDoc.id, // Firebase-assigned document ID
-          jobDescription: data.jobDescription,
-          jobTitle: data.jobTitle,
-          questions: data.questions,
-          companyId: data.companyId,
-          interviewURL: data.interviewURL,
-          status: data.status,
-        };
-        return jobPosting;
+      if (jobDoc.exists) {
+        const data = jobDoc.data();
+        
+        // Verify that the companyId matches
+        if (data.companyId === companyId) {
+          const jobPosting = {
+            id: jobDoc.id, // Firebase-assigned document ID
+            jobDescription: data.jobDescription,
+            jobTitle: data.jobTitle,
+            questions: data.questions,
+            companyId: data.companyId,
+            interviewURL: data.interviewURL,
+            status: data.status,
+          };
+          return jobPosting;
+        } else {
+          console.log(`No job posting found for company ID: ${companyId} with job ID: ${jobId}`);
+          return null;
+        }
       } else {
-        console.log(`No job posting found for company ID: ${companyId} with job ID: ${jobId}`);
+        console.log(`Job posting with ID: ${jobId} does not exist.`);
         return null;
       }
-    } else {
-      console.log(`Job posting with ID: ${jobId} does not exist.`);
-      return null;
+    } catch (error) {
+      console.error("Error fetching job posting:", error);
+      throw error;
     }
-  } catch (error) {
-    console.error("Error fetching job posting:", error);
-    throw error;
   }
-}
 
-async addNewJobPosting(jobPosting) {
-  try {
-    const jobID = uuidv4(); // Generate a unique job ID
-    const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
-    
-    // Generate the URL for the job posting (you can add your logic here)
-    const url = URLManager.createUrlForJobPosting(jobID, jobPosting.companyId);
-    
-    const documentToStore = {
-      jobDescription: jobPosting.jobDescription,
-      jobTitle: jobPosting.jobTitle,
-      questions: jobPosting.questions,
-      companyId: jobPosting.companyId,
-      status: 'inactive',
-      interviewURL: url,
-    };
+  async addNewJobPosting(jobPosting) {
+    try {
+      const jobID = uuidv4(); // Generate a unique job ID
+      const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+      
+      // Generate the URL for the job posting (you can add your logic here)
+      const url = URLManager.createUrlForJobPosting(jobID, jobPosting.companyId);
+      
+      const documentToStore = {
+        jobDescription: jobPosting.jobDescription,
+        jobTitle: jobPosting.jobTitle,
+        questions: jobPosting.questions,
+        companyId: jobPosting.companyId,
+        status: 'inactive',
+        interviewURL: url,
+      };
 
-    console.log("Attempting to save the job posting:", documentToStore);
-    await jobDocRef.set(documentToStore); // Save the document to Firestore
-    console.log("Job posting successfully stored.");
-  } catch (error) {
-    console.error("Error storing job posting:", error);
-    throw new Error('Failed to add new job posting');
+      console.log("Attempting to save the job posting:", documentToStore);
+      await jobDocRef.set(documentToStore); // Save the document to Firestore
+      console.log("Job posting successfully stored.");
+    } catch (error) {
+      console.error("Error storing job posting:", error);
+      throw new Error('Failed to add new job posting');
+    }
   }
-}
+
+  async getCompanyById(companyId) {
+    try {
+      const docRef = this.firestore.collection('companies').doc(companyId);
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          name: data.name,
+          email: data.email,
+        };
+      } else {
+        console.log('No company found with ID:', companyId);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching company:', error);
+      throw error;
+    }
+  }
+
 
 }
