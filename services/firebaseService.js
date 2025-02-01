@@ -188,6 +188,34 @@ export default class FirebaseService {
     }
   }
 
+  // DEMO ONLY Method
+  async getAllInterviewFeedback() {
+    try {
+      const collectionRef = this.firestore.collection('interview_analysis');
+      const snapshot = await collectionRef.get();
+
+      const feedbackList = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        console.log('Interview data:', data);
+        return {
+          id: doc.id,
+          overall_rating: data.overall_rating,
+          pass_to_next_stage: data.pass_to_next_stage,
+          final_feedback: data.final_feedback,
+          username: data.username,
+          jobId: data.jobId || undefined,
+          date: data.date,
+        };
+      });
+
+      console.log('Retrieved interview feedback:', feedbackList);
+      return feedbackList;
+    } catch (error) {
+      console.error('Error retrieving interview feedback:', error);
+      throw error;
+    }
+  }
+
 
 
 }
