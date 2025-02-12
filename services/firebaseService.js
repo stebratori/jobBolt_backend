@@ -189,16 +189,32 @@ export default class FirebaseService {
   }
 
   async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, overall_rating, feedback, conversation }) {
+    console.log("📌 [storeConversation] Function called with parameters:");
+    console.log({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, overall_rating, feedback, conversation });
+
     try {
+        if (!companyID || !jobID || !interviewID || !applicantID || !applicantName || !applicantEmail || !conversation) {
+            console.error("❌ [storeConversation] Missing required fields!");
+            throw new Error("Missing required fields");
+        }
+
         const collectionName = `interviews_${companyID}`;
         const docID = `${interviewID}_${jobID}`;
-        const collectionRef = this.firestore.collection(collectionName);
-        const docRef = collectionRef.doc(docID);
+        console.log(`📌 [storeConversation] Collection Name: ${collectionName}, Document ID: ${docID}`);
 
+        const collectionRef = this.firestore.collection(collectionName);
+        console.log("✅ [storeConversation] Firestore Collection Reference obtained.");
+
+        const docRef = collectionRef.doc(docID);
+        console.log(`📌 [storeConversation] Document Reference created: ${docRef.path}`);
+
+        // Fetch document snapshot to check if it exists
         const docSnapshot = await docRef.get();
+        console.log(`📌 [storeConversation] Document Snapshot Retrieved. Exists: ${docSnapshot.exists}`);
 
         if (!docSnapshot.exists) {
-            // **Dynamically create collection and store first interview**
+            console.log(`🆕 [storeConversation] Document does not exist. Creating a new document.`);
+
             const newDocument = {
                 applicantID,
                 applicantName,
@@ -210,26 +226,30 @@ export default class FirebaseService {
                 conversation: conversation || []
             };
 
-            console.log(`Creating new collection: ${collectionName} and document ID: ${docID}`);
+            console.log("📌 [storeConversation] New Document Data:", newDocument);
             await docRef.set(newDocument);
+            console.log(`✅ [storeConversation] New document successfully created for interview ${docID}`);
         } else {
-            // **Update existing interview document**
-            console.log(`Updating conversation for interview ${docID}`);
-            await docRef.update({
-                conversation: conversation,
-                startingTime: startingTime || docSnapshot.data().startingTime || null,
-                duration: duration || docSnapshot.data().duration || null,
-                overall_rating: overall_rating || docSnapshot.data().overall_rating || null,
-                feedback: feedback || docSnapshot.data().feedback || null
-            });
-        }
+            console.log(`📝 [storeConversation] Updating existing document: ${docID}`);
 
-        console.log(`Conversation successfully stored for interview ${docID}`);
+            const updatedData = {
+                conversation: conversation,
+                startingTime: startingTime || docSnapshot.data()?.startingTime || null,
+                duration: duration || docSnapshot.data()?.duration || null,
+                overall_rating: overall_rating || docSnapshot.data()?.overall_rating || null,
+                feedback: feedback || docSnapshot.data()?.feedback || null
+            };
+
+            console.log("📌 [storeConversation] Updated Data:", updatedData);
+            await docRef.update(updatedData);
+            console.log(`✅ [storeConversation] Document successfully updated for interview ${docID}`);
+        }
     } catch (error) {
-        console.error('Error storing conversation:', error);
+        console.error("❌ [storeConversation] Error storing conversation:", error);
         throw error;
     }
-  }
+}
+
 
 
 
