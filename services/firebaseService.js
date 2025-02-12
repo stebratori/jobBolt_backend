@@ -188,6 +188,51 @@ export default class FirebaseService {
     }
   }
 
+  async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, overall_rating, feedback, conversation }) {
+    try {
+        const collectionName = `interviews_${companyID}`;
+        const docID = `${interviewID}_${jobID}`;
+        const collectionRef = this.firestore.collection(collectionName);
+        const docRef = collectionRef.doc(docID);
+
+        const docSnapshot = await docRef.get();
+
+        if (!docSnapshot.exists) {
+            // **Dynamically create collection and store first interview**
+            const newDocument = {
+                applicantID,
+                applicantName,
+                applicantEmail,
+                startingTime: startingTime || null,
+                duration: duration || null,
+                overall_rating: overall_rating || null,
+                feedback: feedback || null,
+                conversation: conversation || []
+            };
+
+            console.log(`Creating new collection: ${collectionName} and document ID: ${docID}`);
+            await docRef.set(newDocument);
+        } else {
+            // **Update existing interview document**
+            console.log(`Updating conversation for interview ${docID}`);
+            await docRef.update({
+                conversation: conversation,
+                startingTime: startingTime || docSnapshot.data().startingTime || null,
+                duration: duration || docSnapshot.data().duration || null,
+                overall_rating: overall_rating || docSnapshot.data().overall_rating || null,
+                feedback: feedback || docSnapshot.data().feedback || null
+            });
+        }
+
+        console.log(`Conversation successfully stored for interview ${docID}`);
+    } catch (error) {
+        console.error('Error storing conversation:', error);
+        throw error;
+    }
+  }
+
+
+
   // DEMO ONLY Method
   async getAllInterviewFeedback() {
     try {

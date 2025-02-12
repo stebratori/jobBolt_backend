@@ -79,6 +79,35 @@ router.get('/interview-feedback', async (req, res, next) => {
     }
 });
 
+router.post('/store-conversation', async (req, res, next) => {
+  const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, conversation, overall_rating, feedback } = req.body;
+
+  // Validate required fields
+  if (!companyID || !jobID || !interviewID || !conversation) {
+      return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+      const result = await firebaseService.storeConversation({
+          companyID,
+          jobID,
+          interviewID,
+          applicantID,
+          applicantName,
+          applicantEmail,
+          startingTime: startingTime || null,
+          duration: duration || null,
+          overall_rating: overall_rating || null,
+          feedback: feedback || null,
+          conversation
+      });
+
+      res.status(201).json({ message: result.message });
+  } catch (error) {
+      next(error);  // Pass error to global error handler
+  }
+});
+
 // DEMO METHOD
 // Route for storing interview feedback
 router.post('/interview-feedback', async (req, res, next) => {
