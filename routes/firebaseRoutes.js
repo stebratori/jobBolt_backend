@@ -102,7 +102,7 @@ router.post('/store-conversation', async (req, res, next) => {
           conversation
       });
 
-      res.status(201).json({ message: result.message });
+      res.status(201).json({ message: result});
   } catch (error) {
       next(error);  // Pass error to global error handler
   }
