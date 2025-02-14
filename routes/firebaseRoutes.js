@@ -2,6 +2,7 @@
 import express from 'express';
 import FirebaseService from '../services/firebaseService.js'; 
 import PromptService from '../services/promptService.js'; 
+import chatGptService from '../services/chatGptService.js';
 
 const router = express.Router();
 const promptService = new PromptService();
@@ -130,35 +131,5 @@ router.post("/refresh-prompts", async (req, res) => {
     res.status(500).json({ error: "Failed to refresh prompts" });
   }
 });
-
-router.post("/store-interview-analysis", async (req, res) => {
-  console.log("📩 Received API request: /store-interview-analysis");
-
-  const { companyID, jobID, interviewID, interviewAnalysis } = req.body;
-  
-  console.log("   ➡️ Extracted data from request body:");
-  console.log(`   ✅ companyID: ${companyID}`);
-  console.log(`   ✅ jobID: ${jobID}`);
-  console.log(`   ✅ interviewID: ${interviewID}`);
-  console.log("   ✅ interviewAnalysis:", interviewAnalysis);
-
-  if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
-    console.error("❌ Missing companyID, jobID, interviewID, or interviewAnalysis.");
-    return res.status(400).json({ error: "Missing companyID, jobID, interviewID, or interviewAnalysis." });
-  }
-
-  try {
-    console.log("🔄 Calling FirebaseService.storeInterviewAnalysis...");
-    const result = await FirebaseService.storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis });
-    
-    console.log(`✅ FirebaseService.storeInterviewAnalysis completed. Success: ${result.success}`);
-    return res.status(result.success ? 200 : 500).json(result);
-  } catch (error) {
-    console.error("🔥 Error storing interview analysis:", error);
-    return res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-
 
 export default router;

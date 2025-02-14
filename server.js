@@ -6,6 +6,7 @@ import cors from 'cors';
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import firebaseRoutes from './routes/firebaseRoutes.js';
+import analyzeInterviewRoutes from './routes/analyzeInterviewRoutes.js';
 
 // Services
 import StripeService from './services/stripeService.js';
@@ -41,6 +42,7 @@ app.use((req, res, next) => {
 app.use('/api/chatgpt', chatGptRoutes);
 app.use('/api/brevo', brevoRoutes);
 app.use('/api/firebase', firebaseRoutes);
+app.use('/api/analyze', analyzeInterviewRoutes);
 
 // Middleware to conditionally apply JSON parsing
 app.use((req, res, next) => {
