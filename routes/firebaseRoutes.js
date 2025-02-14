@@ -132,14 +132,20 @@ router.post("/refresh-prompts", async (req, res) => {
 });
 
 router.post("/store-interview-analysis", async (req, res) => {
-  const { jobID, interviewID, analysisData } = req.body;
+  const { companyID, jobID, interviewID, interviewAnalysis } = req.body;
 
-  if (!jobID || !interviewID || !analysisData) {
-    return res.status(400).json({ error: "Missing jobID, interviewID, or analysisData." });
+  if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
+    return res.status(400).json({ error: "Missing companyID, jobID, interviewID, or interviewAnalysis." });
   }
 
-  const result = await FirebaseService.storeInterviewAnalysis(jobID, interviewID, analysisData);
-  res.status(result.success ? 200 : 500).json(result);
+  try {
+    const result = await FirebaseService.storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis });
+    res.status(result.success ? 200 : 500).json(result);
+  } catch (error) {
+    console.error("Error storing interview analysis:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
+
 
 export default router;
