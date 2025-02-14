@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-class ChatGptService {
+export default class ChatGptService {
   constructor() {
     this.model = 'gpt-4-turbo';
     
@@ -88,4 +88,4 @@ class ChatGptService {
   }
 }
 
-export default new ChatGptService();
+//export default new ChatGptService();
