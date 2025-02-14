@@ -225,7 +225,39 @@ export default class FirebaseService {
     } catch (error) {
         throw error;
     }
+  }
+
+  async storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis }) {
+    try {
+        if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
+            throw new Error("Missing required fields");
+        }
+
+        const collectionName = `interviews_${companyID}`; // Ensure same collection as storeConversation
+        const docID = `${interviewID}_${jobID}`;
+        const collectionRef = this.firestore.collection(collectionName);
+        const docRef = collectionRef.doc(docID);
+
+        // Fetch document snapshot to check if it exists
+        const docSnapshot = await docRef.get();
+        if (!docSnapshot.exists) {
+            throw new Error(`Interview document ${docID} not found in collection ${collectionName}`);
+        }
+
+        // Update the existing document with interview analysis
+        const updatedData = {
+            interviewAnalysis,
+            analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp() // Timestamp when analysis is added
+        };
+
+        await docRef.update(updatedData);
+        return { success: true, message: `Interview analysis stored for interviewID: ${interviewID}` };
+    } catch (error) {
+        console.error(`Error storing interview analysis for interviewID ${interviewID}:`, error);
+        return { success: false, error: error.message };
+    }
 }
+
 
   // DEMO ONLY Method
   async getAllInterviewFeedback() {

@@ -11,6 +11,7 @@ import firebaseRoutes from './routes/firebaseRoutes.js';
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
 import FirebaseService from './services/firebaseService.js';
+import PromptService from './services/promptService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
 // Services initialization
 const heyGenService = new HeyGenService();
 const firebaseService = new FirebaseService(); 
+const promptService = new PromptService();
 
 // Configure middleware based on route
 app.use((req, res, next) => {
@@ -102,4 +104,5 @@ app.get('/', (req, res) => {
 // Start the server
 app.listen(PORT, () => {
   console.log(`Ljubav svima <3`);
+  promptService.initializePrompts();
 });

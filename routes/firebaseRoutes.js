@@ -1,8 +1,10 @@
 // firebaseRoutes.js
 import express from 'express';
 import FirebaseService from '../services/firebaseService.js'; 
+import PromptService from '../services/promptService.js'; 
 
 const router = express.Router();
+const promptService = new PromptService();
 const firebaseService = new FirebaseService();
 
 // Route for getting all Job Posts of a company by companyID
@@ -118,6 +120,26 @@ router.post('/interview-feedback', async (req, res, next) => {
     } catch (error) {
       next(error);  // Pass the error to the global error handler
     }
+});
+
+router.post("/refresh-prompts", async (req, res) => {
+  try {
+    const result = await promptService.refreshPrompts();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to refresh prompts" });
+  }
+});
+
+router.post("/store-interview-analysis", async (req, res) => {
+  const { jobID, interviewID, analysisData } = req.body;
+
+  if (!jobID || !interviewID || !analysisData) {
+    return res.status(400).json({ error: "Missing jobID, interviewID, or analysisData." });
+  }
+
+  const result = await FirebaseService.storeInterviewAnalysis(jobID, interviewID, analysisData);
+  res.status(result.success ? 200 : 500).json(result);
 });
 
 export default router;
