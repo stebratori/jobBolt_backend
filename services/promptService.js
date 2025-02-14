@@ -109,4 +109,4 @@ static defaultAnalysisPrompt() {
     }
 }
 
-export default Prompts;
+export default PromptService;
