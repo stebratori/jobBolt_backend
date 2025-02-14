@@ -11,8 +11,10 @@ class PromptService {
   static async initializePrompts() {
     console.log("Fetching prompts from Firebase...");
     try {
-      this.cachedPrompts.systemPrompt = await firebaseService.getPrompt("systemPrompt") || this.defaultSystemPrompt();
-      this.cachedPrompts.analysisPrompt = await firebaseService.getPrompt("analysisPrompt") || this.defaultAnalysisPrompt();
+      //this.cachedPrompts.systemPrompt = await firebaseService.getPrompt("systemPrompt") || this.defaultSystemPrompt();
+      //this.cachedPrompts.analysisPrompt = await firebaseService.getPrompt("analysisPrompt") || this.defaultAnalysisPrompt();
+      this.cachedPrompts.systemPrompt = this.defaultSystemPrompt();
+      this.cachedPrompts.analysisPrompt = this.defaultAnalysisPrompt();
       console.log("Prompts loaded successfully.");
     } catch (error) {
       console.error("Error initializing prompts:", error);
