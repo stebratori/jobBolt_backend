@@ -12,11 +12,11 @@ export default class InterviewAnalysisService {
             console.log("System Message:", interviewAnalysisPrompt);
         
             // Call new ChatGptService method instead of sendMessage
-            const response = await chatGptService.analyzeTheInterview(interviewAnalysisPrompt);
-            console.log("Response:", response);
+            const { reply } = await chatGptService.analyzeTheInterview(interviewAnalysisPrompt);
+            console.log("Response:", reply);
         
             // Clean the response
-            const cleanResponse = response.replace(/```json|```/g, '');
+            const cleanResponse = reply.replace(/```json|```/g, '');
             const parsedResponse = JSON.parse(cleanResponse);
         
             if (
