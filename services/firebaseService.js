@@ -1,18 +1,18 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import URLManager from './URLManager.js';
-import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
+//import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
 
 export default class FirebaseService {
   constructor() {
     if (!admin.apps.length) {
-      if (process.env.ENVIRONMENT = "LOCAL") {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccounts),
-        });
-        console.log('[Firebase] initialized locally');
-      } 
-      else {
+      // if (process.env.ENVIRONMENT = "LOCAL") {
+      //   admin.initializeApp({
+      //     credential: admin.credential.cert(serviceAccounts),
+      //   });
+      //   console.log('[Firebase] initialized locally');
+      // } 
+      // else {
         const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
         // Fix double-escaped newlines in private key
@@ -28,7 +28,7 @@ export default class FirebaseService {
 
           console.log('[Firebase] initialized');
         }
-      }
+      //}
     
 
     this.firestore = admin.firestore();
