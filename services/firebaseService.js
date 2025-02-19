@@ -1,27 +1,23 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import URLManager from './URLManager.js';
-
+import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
 export default class FirebaseService {
   constructor() {
-    if (!admin.apps.length) {
-    const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-
-    // Fix double-escaped newlines in private key
-    if (firebaseConfig.private_key) {
-        firebaseConfig.private_key = firebaseConfig.private_key
-          .replace(/\\\\n/g, '\n')  // Handle double-escaped
-          .replace(/\\n/g, '\n');    // Handle single-escaped
-        }
-        
+    try {
+      if (!admin.apps.length) {
         admin.initializeApp({
-            credential: admin.credential.cert(firebaseConfig),
+          credential: admin.credential.cert(serviceAccounts),
         });
 
-      console.log('[Firebase] initialized');
+        console.log('[Firebase] initialized');
+      }
+      this.admin = admin;
+      this.firestore = admin.firestore();
+    } catch (e) {
+      console.log(e)
     }
 
-    this.firestore = admin.firestore();
   }
 
   /**
@@ -30,6 +26,11 @@ export default class FirebaseService {
    * @param {string} jobId - The job ID
    * First update the JobPosting, then update the Company changelog
    */
+
+  getAdmin() {
+    return this.admin;
+  }
+
   async handleCheckoutSessionCompleted(companyId, jobId) {
     try {
       const jobRef = this.firestore.collection('job_postings').doc(jobId);
@@ -238,6 +239,8 @@ export default class FirebaseService {
       throw error;  // Rethrow to allow the backend route to handle it
     }
   }
+
+
 
 
 

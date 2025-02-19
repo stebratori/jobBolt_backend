@@ -1,6 +1,7 @@
 // chatgptRoutes.js
 import express from 'express';
 import chatGptService from '../services/chatGptService.js';
+import verifyToken from "../utils/verifyToken.js";
 
 const router = express.Router();
 

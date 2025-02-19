@@ -6,11 +6,12 @@ import cors from 'cors';
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import firebaseRoutes from './routes/firebaseRoutes.js';
-
+import authRoutes from './routes/auth.js';
 // Services
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
 import FirebaseService from './services/firebaseService.js';
+import bodyParser from "body-parser";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
   credentials: true // Allow cookies and credentials
 }));
+app.use(bodyParser.json());
 
 // Stripe webhook setup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -42,6 +44,7 @@ app.use((req, res, next) => {
 app.use('/api/chatgpt', chatGptRoutes);
 app.use('/api/brevo', brevoRoutes);
 app.use('/api/firebase', firebaseRoutes);
+app.use('/api/auth', authRoutes);
 
 // Middleware to conditionally apply JSON parsing
 app.use((req, res, next) => {
