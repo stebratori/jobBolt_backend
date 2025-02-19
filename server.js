@@ -57,7 +57,7 @@ app.use((req, res, next) => {
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   stripe.handleWebhook(req, res);
 });
-
+// Stripe
 app.post('/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.createCheckoutSession(req.body);
@@ -103,5 +103,4 @@ app.get('/', (req, res) => {
 // Start the server
 app.listen(PORT, () => {
   console.log(`Ljubav svima <3`);
-  PromptService.initializePrompts();
 });

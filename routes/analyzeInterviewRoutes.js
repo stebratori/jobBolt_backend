@@ -28,7 +28,7 @@ router.post('/analyze-and-store-interview', async (req, res, next) => {
     }
 
     // ANALYZE
-    const analysisResult = await interviewAnalysisService.analyzeInterview(jobDescription, conversation);
+    const analysisResult = await interviewAnalysisService.analyzeTheInterview(jobDescription, conversation);
 
     if (!analysisResult.success) {
       console.error("❌ Interview analysis failed:", analysisResult.error);
