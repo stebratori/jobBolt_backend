@@ -1,14 +1,16 @@
 import FirebaseService from "../services/firebaseService.js";
 import ChatGptService from "../services/chatGptService.js";
+import PromptService from "../services/promptService.js";
+
 const firebaseService = new FirebaseService();
 const chatGptService = new ChatGptService();
 
 export default class InterviewAnalysisService {
     
-    async analyzeInterview(jobDescription, conversations) {
+    async analyzeTheInterview(jobDescription, conversations) {
         try {
-            // Fetch system message from FirebaseService
-            const interviewAnalysisPrompt = await firebaseService.getAnalysisPrompt(jobDescription, conversations);
+            // Fetch system message from PromptService
+            const interviewAnalysisPrompt = PromptService.analysisPrompt(jobDescription, conversations);
             console.log("System Message:", interviewAnalysisPrompt);
         
             // Call new ChatGptService method instead of sendMessage
@@ -26,9 +28,6 @@ export default class InterviewAnalysisService {
                 typeof parsedResponse.interview_feedback.pass_to_next_stage === "boolean" &&
                 typeof parsedResponse.interview_feedback.final_feedback === "string"
             ) {
-                // Store the interview analysis in Firebase
-                await firebaseService.storeInterviewAnalysis(parsedResponse.interview_feedback);
-
                 return { success: true, interviewFeedback: parsedResponse.interview_feedback };
             } else {
                 throw new Error("Unexpected response format.");
@@ -39,3 +38,12 @@ export default class InterviewAnalysisService {
         }
     }
 }
+    
+    // // Store the result in Firebase
+    // console.log("🔄 Storing interview analysis in Firebase...");
+    // const storeResult = await firebaseService.storeInterviewAnalysis({
+    //   companyID,
+    //   jobID,
+    //   interviewID,
+    //   interviewAnalysis: analysisResult.interviewFeedback
+    // });

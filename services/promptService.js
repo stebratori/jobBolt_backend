@@ -3,8 +3,8 @@ const firebaseService = new FirebaseService();
 
 class PromptService {
   static cachedPrompts = {
-    systemPrompt: null,
-    analysisPrompt: null
+    systemPrompt: this.defaultSystemPrompt(),
+    analysisPrompt: this.defaultAnalysisPrompt()
   };
 
   /** Load prompts from Firebase when the server starts */

@@ -69,7 +69,7 @@ export default class ChatGptService {
       const message = { role: 'system', content: interviewAnalysisPrompt };
       const response = await this.api.post('/chat/completions', {
         model: this.model,
-        messages: message,
+        messages: [message],
       });
       console.log("Usage object:", JSON.stringify(response.data?.usage, null, 2));
 
@@ -81,6 +81,7 @@ export default class ChatGptService {
         throw new Error('Failed to retrieve a valid response from ChatGPT');
       }
       return { reply, completion_tokens, prompt_tokens };
+      
     } catch (error) {
       console.error('Error communicating with ChatGPT API:', error.response?.data || error.message);
       throw error;
