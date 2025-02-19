@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-class ChatGptService {
+export default class ChatGptService {
   constructor() {
     this.model = 'gpt-4-turbo';
     
@@ -63,6 +63,30 @@ class ChatGptService {
       throw error;
     }
   }
+
+  async analyzeTheInterview(interviewAnalysisPrompt) {
+    try {
+      const message = { role: 'system', content: interviewAnalysisPrompt };
+      const response = await this.api.post('/chat/completions', {
+        model: this.model,
+        messages: [message],
+      });
+      console.log("Usage object:", JSON.stringify(response.data?.usage, null, 2));
+
+      const reply = response.data?.choices[0]?.message?.content;
+      const completion_tokens = response.data?.usage?.completion_tokens || null;
+      const prompt_tokens = response.data?.usage?.prompt_tokens || null;
+
+      if (!reply) {
+        throw new Error('Failed to retrieve a valid response from ChatGPT');
+      }
+      return { reply, completion_tokens, prompt_tokens };
+      
+    } catch (error) {
+      console.error('Error communicating with ChatGPT API:', error.response?.data || error.message);
+      throw error;
+    }
+  }
 }
 
-export default new ChatGptService();
+//export default new ChatGptService();

@@ -1,6 +1,6 @@
 // firebaseRoutes.js
 import express from 'express';
-import FirebaseService from '../services/firebaseService.js'; 
+import FirebaseService from '../services/firebaseService.js';
 
 const router = express.Router();
 const firebaseService = new FirebaseService();
@@ -68,17 +68,6 @@ router.post('/company', async (req, res, next) => {
     }
 });
 
-// DEMO METHOD
-// Route for getting all interview feedback
-router.get('/interview-feedback', async (req, res, next) => {
-    try {
-      const feedbackList = await firebaseService.getAllInterviewFeedback();
-      res.status(200).json(feedbackList); // Send the feedback list as a response
-    } catch (error) {
-      next(error);
-    }
-});
-
 router.post('/store-conversation', async (req, res, next) => {
   const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, conversation, overall_rating, feedback } = req.body;
 
@@ -105,6 +94,17 @@ router.post('/store-conversation', async (req, res, next) => {
       res.status(201).json({ message: result});
   } catch (error) {
       next(error);  // Pass error to global error handler
+  }
+});
+
+// DEMO METHOD
+// Route for getting all interview feedback
+router.get('/interview-feedback', async (req, res, next) => {
+  try {
+    const feedbackList = await firebaseService.getAllInterviewFeedback();
+    res.status(200).json(feedbackList); // Send the feedback list as a response
+  } catch (error) {
+    next(error);
   }
 });
 

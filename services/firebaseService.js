@@ -225,7 +225,49 @@ export default class FirebaseService {
     } catch (error) {
         throw error;
     }
-}
+  }
+
+  async storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis }) {
+    try {
+        if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
+          const missingFields = [
+              !companyID && 'companyID',
+              !jobID && 'jobID',
+              !interviewID && 'interviewID',
+              !interviewAnalysis && 'interviewAnalysis'
+          ].filter(Boolean);
+          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+        const collectionName = `interviews_${companyID}`;
+        const docID = `${interviewID}_${jobID}`;
+        const collectionRef = this.firestore.collection(collectionName);
+        const docRef = collectionRef.doc(docID);
+        const docSnapshot = await docRef.get();
+        if (!docSnapshot.exists) {
+            throw new Error(`❌ Interview document ${docID} not found in collection ${collectionName}`);
+        }
+        const updatedData = { 
+          interviewAnalysis, 
+          analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+        await docRef.update(updatedData);
+        
+        console.log(`✅ Interview analysis stored successfully for interviewID: ${interviewID}`);
+        return { success: true };
+    } catch (error) {
+      console.error(`🔥 Error storing interview analysis for interviewID ${interviewID}:`, error);
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+          return { success: false,error: 'Permission denied: Unable to access the interview document'};
+      }
+      if (error.code === 'resource-exhausted') {
+          return { success: false,error: 'Database quota exceeded. Please try again later'};
+      }
+      return { success: false, error: error.message };
+    }
+  }
+
+
 
   // DEMO ONLY Method
   async getAllInterviewFeedback() {

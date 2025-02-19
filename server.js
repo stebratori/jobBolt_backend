@@ -6,11 +6,12 @@ import cors from 'cors';
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import firebaseRoutes from './routes/firebaseRoutes.js';
+import analyzeInterviewRoutes from './routes/analyzeInterviewRoutes.js';
 
 // Services
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
-import FirebaseService from './services/firebaseService.js';
+import PromptService from './services/promptService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,7 +28,6 @@ const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
 // Services initialization
 const heyGenService = new HeyGenService();
-const firebaseService = new FirebaseService(); 
 
 // Configure middleware based on route
 app.use((req, res, next) => {
@@ -42,6 +42,7 @@ app.use((req, res, next) => {
 app.use('/api/chatgpt', chatGptRoutes);
 app.use('/api/brevo', brevoRoutes);
 app.use('/api/firebase', firebaseRoutes);
+app.use('/api/analyze', analyzeInterviewRoutes);
 
 // Middleware to conditionally apply JSON parsing
 app.use((req, res, next) => {
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   stripe.handleWebhook(req, res);
 });
-
+// Stripe
 app.post('/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.createCheckoutSession(req.body);
