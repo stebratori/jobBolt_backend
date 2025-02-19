@@ -1,8 +1,9 @@
 // chatgptRoutes.js
 import express from 'express';
-import chatGptService from '../services/chatGptService.js';
+import ChatGptService from '../services/chatGptService.js';
 
 const router = express.Router();
+const chatGptService = new ChatGptService()
 
 // Route for sending messages to ChatGPT
 router.post('/send-message', async (req, res, next) => {
