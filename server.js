@@ -11,7 +11,6 @@ import analyzeInterviewRoutes from './routes/analyzeInterviewRoutes.js';
 // Services
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
-import PromptService from './services/promptService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,10 +25,14 @@ app.use(cors({
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
-// Services initialization
 const heyGenService = new HeyGenService();
 
-// Configure middleware based on route
+// Stripe webhook route - must come before other routes that use express.json()
+app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  stripe.handleWebhook(req, res);
+});
+
+// Configure middleware based on route (should come second)
 app.use((req, res, next) => {
   if (req.originalUrl === '/webhook') {
     next();
@@ -38,25 +41,12 @@ app.use((req, res, next) => {
   }
 });
 
-// Routes
+// Routes (at the end)
 app.use('/api/chatgpt', chatGptRoutes);
 app.use('/api/brevo', brevoRoutes);
 app.use('/api/firebase', firebaseRoutes);
 app.use('/api/analyze', analyzeInterviewRoutes);
 
-// Middleware to conditionally apply JSON parsing
-app.use((req, res, next) => {
-  if (req.originalUrl === '/webhook') {
-    next(); // Skip JSON body parsing for the webhook route
-  } else {
-    express.json()(req, res, next); // Parse JSON for all other routes
-  }
-});
-
-// Stripe webhook route - must come before other routes that use express.json()
-app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  stripe.handleWebhook(req, res);
-});
 // Stripe
 app.post('/create-checkout-session', async (req, res) => {
   try {
@@ -77,6 +67,11 @@ app.get('/api/heygen/token', async (req, res) => {
   }
 });
 
+// Default route for "/"
+app.get('/', (req, res) => {
+  res.send('Welcome to the Job Bolt API <3');
+});
+
 // Global error handler with detailed error information
 app.use((err, req, res, next) => {
   console.error('Detailed Error:', {
@@ -93,11 +88,6 @@ app.use((err, req, res, next) => {
       response: err.response?.data
     })
   });
-});
-
-// Default route for "/"
-app.get('/', (req, res) => {
-  res.send('Welcome to the Job Bolt API <3');
 });
 
 // Start the server
