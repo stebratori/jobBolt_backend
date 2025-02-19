@@ -1,6 +1,3 @@
-import FirebaseService from "./firebaseService.js";
-const firebaseService = new FirebaseService();
-
 class PromptService {
   static cachedPrompts = {
     systemPrompt: this.defaultSystemPrompt(),

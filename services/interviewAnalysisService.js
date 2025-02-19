@@ -1,8 +1,6 @@
-import FirebaseService from "../services/firebaseService.js";
 import ChatGptService from "../services/chatGptService.js";
 import PromptService from "../services/promptService.js";
 
-const firebaseService = new FirebaseService();
 const chatGptService = new ChatGptService();
 
 export default class InterviewAnalysisService {
@@ -38,12 +36,3 @@ export default class InterviewAnalysisService {
         }
     }
 }
-    
-    // // Store the result in Firebase
-    // console.log("🔄 Storing interview analysis in Firebase...");
-    // const storeResult = await firebaseService.storeInterviewAnalysis({
-    //   companyID,
-    //   jobID,
-    //   interviewID,
-    //   interviewAnalysis: analysisResult.interviewFeedback
-    // });
