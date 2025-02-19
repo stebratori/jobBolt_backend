@@ -1,25 +1,35 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import URLManager from './URLManager.js';
+import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
 
 export default class FirebaseService {
   constructor() {
     if (!admin.apps.length) {
-    const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-
-    // Fix double-escaped newlines in private key
-    if (firebaseConfig.private_key) {
-        firebaseConfig.private_key = firebaseConfig.private_key
-          .replace(/\\\\n/g, '\n')  // Handle double-escaped
-          .replace(/\\n/g, '\n');    // Handle single-escaped
-        }
-        
+      if (process.env.ENVIRONMENT = "LOCAL") {
         admin.initializeApp({
-            credential: admin.credential.cert(firebaseConfig),
+          credential: admin.credential.cert(serviceAccounts),
         });
+        console.log('[Firebase] initialized locally');
+      } 
+      else {
+        const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
-      console.log('[Firebase] initialized');
-    }
+        // Fix double-escaped newlines in private key
+        if (firebaseConfig.private_key) {
+            firebaseConfig.private_key = firebaseConfig.private_key
+              .replace(/\\\\n/g, '\n')  // Handle double-escaped
+              .replace(/\\n/g, '\n');    // Handle single-escaped
+            }
+            
+            admin.initializeApp({
+                credential: admin.credential.cert(firebaseConfig),
+            });
+
+          console.log('[Firebase] initialized');
+        }
+      }
+    
 
     this.firestore = admin.firestore();
   }
