@@ -31,7 +31,7 @@ router.get('/job-posting/:companyId/:jobId', async (req, res, next) => {
     }
 });
 
-// Route for creating a new Job Post
+// Route for creating a new Job Post //
 router.post('/job-posting', async (req, res, next) => {
     const jobPosting = req.body;
     try {
