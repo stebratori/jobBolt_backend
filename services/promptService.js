@@ -18,7 +18,8 @@ class PromptService {
 
   /** Get system prompt (uses cached value) */
   static systemPrompt(jobDescription, questions) {
-    return this.cachedPrompts.systemPrompt+jobDescription+questions;
+    return `${this.cachedPrompts.systemPrompt}\n\nJob Description:\n${jobDescription}\n\nQuestions:\n${questions}`;
+
   }
 
   /** Get analysis prompt (uses cached value) */
