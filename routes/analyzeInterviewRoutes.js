@@ -27,7 +27,7 @@ router.post('/analyze-and-store-interview', async (req, res, next) => {
       return res.status(400).json({ error: "Missing companyID, jobID, interviewID, jobDescription, or conversation." });
     }
 
-    console.log("🔄 Calling InterviewAnalysisService.analyzeInterview...");
+    // ANALYZE
     const analysisResult = await interviewAnalysisService.analyzeInterview(jobDescription, conversation);
 
     if (!analysisResult.success) {
@@ -35,20 +35,22 @@ router.post('/analyze-and-store-interview', async (req, res, next) => {
       return res.status(500).json({ success: false, error: analysisResult.error });
     }
 
-    console.log("✅ Interview analysis completed successfully.");
-    
-    // // Store the result in Firebase
-    // console.log("🔄 Storing interview analysis in Firebase...");
-    // const storeResult = await firebaseService.storeInterviewAnalysis({
-    //   companyID,
-    //   jobID,
-    //   interviewID,
-    //   interviewAnalysis: analysisResult.interviewFeedback
-    // });
+    // STORE IN DB
+    const storeResult = await firebaseService.storeInterviewAnalysis({
+      companyID,
+      jobID,
+      interviewID,
+      interviewAnalysis: analysisResult.interviewFeedback
+    });
+    if (!storeResult.success) {
+      console.error("❌ Failed to store analysis in Firebase:", storeResult.error);
+      return res.status(500).json({ success: false, error: storeResult.error });
+    }
 
-    console.log(`✅ Interview analysis stored successfully: ${storeResult.message}`);
-    return res.status(200).json(storeResult);
-  } catch (error) {
+    console.log("✅ Successfully analyzed and stored the interview", interviewID);
+    return res.status(200).json({ success: true });
+  } 
+  catch (error) {
     console.error("🔥 Error analyzing and storing interview:", error);
     return res.status(500).json({ success: false, error: error.message });
   }

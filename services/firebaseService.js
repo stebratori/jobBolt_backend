@@ -229,43 +229,43 @@ export default class FirebaseService {
 
   async storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis }) {
     try {
-        console.log(`🔹 Received request to store interview analysis`);
-        console.log(`   ➡️ companyID: ${companyID}`);
-        console.log(`   ➡️ jobID: ${jobID}`);
-        console.log(`   ➡️ interviewID: ${interviewID}`);
-        console.log(`   ➡️ interviewAnalysis:`, interviewAnalysis);
-
         if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
-            throw new Error("❌ Missing required fields");
+          const missingFields = [
+              !companyID && 'companyID',
+              !jobID && 'jobID',
+              !interviewID && 'interviewID',
+              !interviewAnalysis && 'interviewAnalysis'
+          ].filter(Boolean);
+          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
-
         const collectionName = `interviews_${companyID}`;
         const docID = `${interviewID}_${jobID}`;
-        console.log(`🔍 Looking for document in Firestore: Collection - ${collectionName}, Doc - ${docID}`);
-
         const collectionRef = this.firestore.collection(collectionName);
         const docRef = collectionRef.doc(docID);
-
         const docSnapshot = await docRef.get();
         if (!docSnapshot.exists) {
             throw new Error(`❌ Interview document ${docID} not found in collection ${collectionName}`);
         }
-
-        console.log(`✅ Document found. Updating with interview analysis...`);
-        const updatedData = {
-            interviewAnalysis,
-            analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp()
+        const updatedData = { 
+          interviewAnalysis, 
+          analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp()
         };
-
         await docRef.update(updatedData);
+        
         console.log(`✅ Interview analysis stored successfully for interviewID: ${interviewID}`);
-
-        return { success: true, message: `Interview analysis stored for interviewID: ${interviewID}` };
+        return { success: true };
     } catch (error) {
-        console.error(`🔥 Error storing interview analysis for interviewID ${interviewID}:`, error);
-        return { success: false, error: error.message };
+      console.error(`🔥 Error storing interview analysis for interviewID ${interviewID}:`, error);
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+          return { success: false,error: 'Permission denied: Unable to access the interview document'};
+      }
+      if (error.code === 'resource-exhausted') {
+          return { success: false,error: 'Database quota exceeded. Please try again later'};
+      }
+      return { success: false, error: error.message };
     }
-}
+  }
 
 
 
