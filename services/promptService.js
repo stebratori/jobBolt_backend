@@ -8,8 +8,6 @@ class PromptService {
   static async initializePrompts() {
     console.log("Fetching prompts from Firebase...");
     try {
-      //this.cachedPrompts.systemPrompt = await firebaseService.getPrompt("systemPrompt") || this.defaultSystemPrompt();
-      //this.cachedPrompts.analysisPrompt = await firebaseService.getPrompt("analysisPrompt") || this.defaultAnalysisPrompt();
       this.cachedPrompts.systemPrompt = this.defaultSystemPrompt();
       this.cachedPrompts.analysisPrompt = this.defaultAnalysisPrompt();
       console.log("Prompts loaded successfully.");
@@ -30,13 +28,6 @@ class PromptService {
     ).join('\n');
 
     return this.cachedPrompts.analysisPrompt+jobDescription+formattedConversation
-  }
-
-  /** Manually refresh prompts from Firebase */
-  static async refreshPrompts() {
-    console.log("Refreshing prompts from Firebase...");
-    await this.initializePrompts();
-    return { success: true, message: "Prompts refreshed successfully" };
   }
 
   /** Default System Prompt (fallback if Firebase is unavailable) */

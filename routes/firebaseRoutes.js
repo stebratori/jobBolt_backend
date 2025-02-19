@@ -1,11 +1,8 @@
 // firebaseRoutes.js
 import express from 'express';
-import FirebaseService from '../services/firebaseService.js'; 
-import PromptService from '../services/promptService.js'; 
-import chatGptService from '../services/chatGptService.js';
+import FirebaseService from '../services/firebaseService.js';
 
 const router = express.Router();
-const promptService = new PromptService();
 const firebaseService = new FirebaseService();
 
 // Route for getting all Job Posts of a company by companyID
@@ -71,17 +68,6 @@ router.post('/company', async (req, res, next) => {
     }
 });
 
-// DEMO METHOD
-// Route for getting all interview feedback
-router.get('/interview-feedback', async (req, res, next) => {
-    try {
-      const feedbackList = await firebaseService.getAllInterviewFeedback();
-      res.status(200).json(feedbackList); // Send the feedback list as a response
-    } catch (error) {
-      next(error);
-    }
-});
-
 router.post('/store-conversation', async (req, res, next) => {
   const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, conversation, overall_rating, feedback } = req.body;
 
@@ -112,6 +98,17 @@ router.post('/store-conversation', async (req, res, next) => {
 });
 
 // DEMO METHOD
+// Route for getting all interview feedback
+router.get('/interview-feedback', async (req, res, next) => {
+  try {
+    const feedbackList = await firebaseService.getAllInterviewFeedback();
+    res.status(200).json(feedbackList); // Send the feedback list as a response
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DEMO METHOD
 // Route for storing interview feedback
 router.post('/interview-feedback', async (req, res, next) => {
     const feedback = req.body;
@@ -121,15 +118,6 @@ router.post('/interview-feedback', async (req, res, next) => {
     } catch (error) {
       next(error);  // Pass the error to the global error handler
     }
-});
-
-router.post("/refresh-prompts", async (req, res) => {
-  try {
-    const result = await promptService.refreshPrompts();
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to refresh prompts" });
-  }
 });
 
 export default router;
