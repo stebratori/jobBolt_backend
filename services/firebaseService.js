@@ -237,7 +237,7 @@ export default class FirebaseService {
     }
   }
 
-  async storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis }) {
+  async storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis, duration }) {
     try {
         if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
           const missingFields = [
@@ -258,7 +258,8 @@ export default class FirebaseService {
         }
         const updatedData = { 
           interviewAnalysis, 
-          analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp()
+          analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
+          duration
         };
         await docRef.update(updatedData);
         

@@ -13,14 +13,7 @@ router.post('/analyze-and-store-interview', async (req, res, next) => {
   console.log("📩 Received API request: /analyze-and-store-interview");
 
   try {
-    const { companyID, jobID, interviewID, jobDescription, conversation } = req.body;
-
-    console.log("   ➡️ Extracted data from request body:");
-    console.log(`   ✅ companyID: ${companyID}`);
-    console.log(`   ✅ jobID: ${jobID}`);
-    console.log(`   ✅ interviewID: ${interviewID}`);
-    console.log("   ✅ jobDescription:", jobDescription);
-    console.log("   ✅ conversation:", conversation);
+    const { companyID, jobID, interviewID, jobDescription, conversation, duration } = req.body;
 
     if (!companyID || !jobID || !interviewID || !jobDescription || !conversation) {
       console.error("❌ Missing required fields.");
@@ -40,7 +33,8 @@ router.post('/analyze-and-store-interview', async (req, res, next) => {
       companyID,
       jobID,
       interviewID,
-      interviewAnalysis: analysisResult.interviewFeedback
+      interviewAnalysis: analysisResult.interviewFeedback,
+      duration
     });
     if (!storeResult.success) {
       console.error("❌ Failed to store analysis in Firebase:", storeResult.error);
