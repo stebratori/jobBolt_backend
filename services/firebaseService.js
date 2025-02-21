@@ -198,7 +198,7 @@ export default class FirebaseService {
     }
   }
 
-  async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, conversation }) {
+  async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, conversation }) {
     try {
         if (!companyID || !jobID || !interviewID || !applicantID || !applicantName || !applicantEmail || !conversation) {
             throw new Error("Missing required fields");
@@ -218,7 +218,7 @@ export default class FirebaseService {
               applicantID,
               applicantName,
               applicantEmail,
-              startingTime: startingTime || null,
+              startingTime: admin.firestore.FieldValue.serverTimestamp(),
               conversation: conversation || []
             };
             await docRef.set(newDocument);
