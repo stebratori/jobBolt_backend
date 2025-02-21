@@ -69,7 +69,7 @@ router.post('/company', async (req, res, next) => {
 });
 
 router.post('/store-conversation', async (req, res, next) => {
-  const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, conversation, overall_rating, feedback } = req.body;
+  const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, conversation } = req.body;
 
   // Validate required fields
   if (!companyID || !jobID || !interviewID || !conversation) {
@@ -85,9 +85,6 @@ router.post('/store-conversation', async (req, res, next) => {
           applicantName,
           applicantEmail,
           startingTime: startingTime || null,
-          duration: duration || null,
-          overall_rating: overall_rating || null,
-          feedback: feedback || null,
           conversation
       });
 

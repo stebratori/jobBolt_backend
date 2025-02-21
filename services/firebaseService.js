@@ -198,13 +198,13 @@ export default class FirebaseService {
     }
   }
 
-  async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, duration, overall_rating, feedback, conversation }) {
+  async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, conversation }) {
     try {
         if (!companyID || !jobID || !interviewID || !applicantID || !applicantName || !applicantEmail || !conversation) {
             throw new Error("Missing required fields");
         }
         const collectionName = `interviews_${companyID}`;
-        const docID = `${interviewID}_${jobID}`;
+        const docID = interviewID;
         const collectionRef = this.firestore.collection(collectionName);
         const docRef = collectionRef.doc(docID);
 
@@ -212,25 +212,21 @@ export default class FirebaseService {
         const docSnapshot = await docRef.get();
         if (!docSnapshot.exists) {
             const newDocument = {
-                applicantID,
-                applicantName,
-                applicantEmail,
-                startingTime: startingTime || null,
-                duration: duration || null,
-                overall_rating: overall_rating || null,
-                feedback: feedback || null,
-                conversation: conversation || []
+              jobID,
+              companyID,
+              interviewID,
+              applicantID,
+              applicantName,
+              applicantEmail,
+              startingTime: startingTime || null,
+              conversation: conversation || []
             };
             await docRef.set(newDocument);
         } else {
-            const updatedData = {
-                conversation: conversation,
-                startingTime: startingTime || docSnapshot.data()?.startingTime || null,
-                duration: duration || docSnapshot.data()?.duration || null,
-                overall_rating: overall_rating || docSnapshot.data()?.overall_rating || null,
-                feedback: feedback || docSnapshot.data()?.feedback || null
+            const updatedData = { 
+              conversation: conversation
             };
-            await docRef.update(updatedData);
+            await docRef.set(updatedData, { merge: true });
         }
     } catch (error) {
         throw error;
@@ -249,7 +245,7 @@ export default class FirebaseService {
           throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
         const collectionName = `interviews_${companyID}`;
-        const docID = `${interviewID}_${jobID}`;
+        const docID = interviewID;
         const collectionRef = this.firestore.collection(collectionName);
         const docRef = collectionRef.doc(docID);
         const docSnapshot = await docRef.get();
@@ -261,7 +257,7 @@ export default class FirebaseService {
           analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
           duration
         };
-        await docRef.update(updatedData);
+        await docRef.set(updatedData, { merge: true });
         
         console.log(`✅ Interview analysis stored successfully for interviewID: ${interviewID}`);
         return { success: true };
