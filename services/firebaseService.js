@@ -274,6 +274,36 @@ export default class FirebaseService {
     }
   }
 
+  async getInterviewResults(companyID, jobID) {
+    try {
+        if (!companyID || !jobID) {
+            throw new Error("Missing required fields: companyID, jobID");
+        }
+
+        const collectionName = `interviews_${companyID}`;
+        const collectionRef = this.firestore.collection(collectionName);
+
+        // ✅ Query Firestore to get all interviews with the given jobID
+        const querySnapshot = await collectionRef.where("jobID", "==", jobID).get();
+
+        if (querySnapshot.empty) {
+            return { success: false, message: `No interviews found for jobID: ${jobID}` };
+        }
+
+        let interviews = [];
+        querySnapshot.forEach(doc => {
+            interviews.push({ id: doc.id, ...doc.data() });
+        });
+
+        return { success: true, interviews };
+
+    } catch (error) {
+        console.error(`🔥 Error retrieving interview results for jobID ${jobID}:`, error);
+        return { success: false, error: error.message };
+    }
+  }
+
+
 
 
   // DEMO ONLY Method
