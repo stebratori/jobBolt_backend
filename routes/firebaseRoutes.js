@@ -69,7 +69,7 @@ router.post('/company', async (req, res, next) => {
 });
 
 router.post('/store-conversation', async (req, res, next) => {
-  const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, startingTime, conversation } = req.body;
+  const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, conversation } = req.body;
 
   // Validate required fields
   if (!companyID || !jobID || !interviewID || !conversation) {
@@ -84,13 +84,28 @@ router.post('/store-conversation', async (req, res, next) => {
           applicantID,
           applicantName,
           applicantEmail,
-          startingTime: startingTime || null,
           conversation
       });
 
       res.status(201).json({ message: result});
   } catch (error) {
       next(error);  // Pass error to global error handler
+  }
+});
+
+router.get('/interview-results', async (req, res, next) => {
+  try {
+    const { companyID, jobID } = req.query; 
+    if (!companyID || !jobID) {
+      return res.status(400).json({ success: false, error: "Missing required query parameters: companyID, jobID" });
+    }
+    const interviewResults = await firebaseService.getInterviewResults(companyID, jobID);
+    if (!interviewResults.success) {
+      return res.status(404).json(interviewResults); 
+    }
+    res.status(200).json(interviewResults);
+  } catch (error) {
+    next(error);
   }
 });
 
