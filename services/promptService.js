@@ -51,6 +51,35 @@ static defaultSystemPrompt() {
     These are jobDescription and questions:`;
 }
 
+/** ✅ Regeneration Prompt Method inside PromptService */
+static regenerationPrompt(allQuestions, questionToRegenerate, rejectedQuestions) {
+  return `
+  This was the original system prompt used to generate interview questions:
+  ${this.cachedPrompts.systemPrompt}
+
+  You are an expert interviewer. Generate a **unique** interview question that has not been generated before. The new question **must not** be the same as any of the previously generated questions or any rejected question.
+
+  ### Previously Generated Questions:
+  ${allQuestions.map((q, index) => `${index + 1}. ${q}`).join("\n")}
+
+  ### Question to Replace:
+  ${questionToRegenerate}
+
+  ### Previously Rejected Questions:
+  ${rejectedQuestions.length > 0 ? rejectedQuestions.map((q, index) => `${index + 1}. ${q}`).join("\n") : "None"}
+
+  ### Instructions:
+  - Ensure the new question is **unique**.
+  - Keep it **relevant** to the job description.
+  - The question should be **clear, professional, and suitable** for an interview.
+  - **Do not repeat** any of the previously generated or rejected questions.
+
+  Now, generate **one** new interview question.
+    `.trim();
+}
+
+
+
 /** ✅ Default Analysis Prompt (Fallback if Firebase is unavailable) */
 static defaultAnalysisPrompt() {
 

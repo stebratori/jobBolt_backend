@@ -16,6 +16,16 @@ router.post('/send-message', async (req, res, next) => {
   }
 });
 
+router.post('/chat/questions/regenerate', async (req, res, next) => {
+  try {
+    const { allQuestions, questionToRegenerate, rejectedQuestions } = req.body;
+    const { newQuestion } = await chatGptService.regenerateQuestion(allQuestions, questionToRegenerate, rejectedQuestions);
+    res.json({ newQuestion });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Route for generating interview questions
 router.post('/generate-questions', async (req, res, next) => {
   try {
