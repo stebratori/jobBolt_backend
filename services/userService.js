@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import FirebaseService from ".firebaseService.js";
+import FirebaseService from "./firebaseService.js";
 
 const firebaseService = new FirebaseService();
 

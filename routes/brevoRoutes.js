@@ -1,8 +1,9 @@
 import express from 'express';
-import { sendBulkEmails } from '../services/brevoService.js';
+import BrevoService from '../services/brevoService.js';
 import UserService from '../services/userService.js';
 
 const router = express.Router();
+const brevoService = new BrevoService();
 
 // Route to send bulk emails
 router.post('/send-emails', async (req, res, next) => {
@@ -15,7 +16,7 @@ router.post('/send-emails', async (req, res, next) => {
       return res.status(400).json({ error: 'Emails must be a non-empty array.' });
     }
 
-    const response = await sendBulkEmails(emailsArray, passwordsArray, url);
+    const response = await brevoService.sendBulkEmailsWithPasswords(emailsArray, passwordsArray, url);
     res.status(200).json({ message: 'Emails sent successfully!', response });
   } catch (error) {
     console.error('[BREVO ROUTE ERROR]:', error.message);
