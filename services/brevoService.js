@@ -24,8 +24,17 @@ export default class BrevoService {
     async sendBulkEmailsWithPasswords(emails, passwords, url) {
         try {
             // Validate input length
+            if (!emails || !Array.isArray(emails)) {
+                throw new Error('Emails must be a valid array');
+            }
+            if (!passwords || !Array.isArray(passwords)) {
+                throw new Error('Passwords must be a valid array');
+            }
             if (emails.length !== passwords.length) {
                 throw new Error('Emails and passwords arrays must have the same length.');
+            }
+            if (!url) {
+                throw new Error('URL is required');
             }
 
             // Prepare email content for each recipient
