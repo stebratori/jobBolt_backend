@@ -37,6 +37,13 @@ export default class BrevoService {
                 throw new Error('URL is required');
             }
 
+            // Log incoming data
+            console.log('[BREVO DEBUG] Incoming data:', {
+                emailsCount: emails.length,
+                passwordsCount: passwords.length,
+                url
+            });
+
             // Prepare email content for each recipient
             const messageVersions = emails.map((email, index) => ({
                 to: [{ email }],
@@ -53,16 +60,24 @@ export default class BrevoService {
 
             // Create the email request
             const sendSmtpEmail = {
-                sender: { email: 'stealth.mvp@gmail.com', name: 'Job Bolt' },
-                messageVersions,
+                sender: { 
+                    email: 'stealth.mvp@gmail.com', 
+                    name: 'Job Bolt'
+                },
+                messageVersions: messageVersions,
+                // Add these recommended fields
+                tags: ['interview-invite'],
+                scheduledAt: new Date().toISOString()
             };
 
-            console.log('[DEBUG] Email request prepared:', JSON.stringify(sendSmtpEmail, null, 2));
+            // Log the complete request
+            console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
 
             // Send the email
-            console.log('[DEBUG] Attempting to send email...');
             const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-            console.log('[DEBUG] Email sent successfully:', JSON.stringify(response, null, 2));
+            
+            // Log success
+            console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
 
             return response;
         } catch (error) {
