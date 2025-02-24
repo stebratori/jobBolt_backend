@@ -318,9 +318,9 @@ export default class FirebaseService {
   //   return candidate;
   // }
 
-  async storeCandidatesInJobPosting(companyID, jobID, candidates) {
+  async storeCandidatesInJobPosting(companyID, jobID, newCandidates) {
     try {
-        if (!companyID || !jobID || !Array.isArray(candidates)) {
+        if (!companyID || !jobID || !Array.isArray(newCandidates)) {
             throw new Error("Missing required fields or candidates is not an array");
         }
 
@@ -333,7 +333,14 @@ export default class FirebaseService {
             throw new Error(`❌ Job posting document ${jobID} not found for company ${companyID}`);
         }
 
-        await jobDocRef.update({ candidates: candidates });
+        // Get existing candidates array or initialize empty array if it doesn't exist
+        const jobData = jobDocSnapshot.data();
+        const existingCandidates = jobData.candidates || [];
+
+        // Simply append new candidates to existing array (or create new array if none exists)
+        const updatedCandidates = [...existingCandidates, ...newCandidates];
+
+        await jobDocRef.update({ candidates: updatedCandidates });
 
         console.log(`✅ Candidates successfully added to job posting: ${jobID}`);
         return { success: true };
@@ -342,7 +349,7 @@ export default class FirebaseService {
         console.error(`🔥 Error storing candidates in job posting ${jobID}:`, error);
         return { success: false, error: error.message };
     }
-  }
+}
 
 
 
