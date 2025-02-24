@@ -23,66 +23,65 @@ export default class BrevoService {
      */
     async sendBulkEmailsWithPasswords(emails, passwords, url) {
         try {
-            // Validate input length
             if (!emails || !Array.isArray(emails)) {
                 throw new Error('Emails must be a valid array');
             }
+    
             if (!passwords || !Array.isArray(passwords)) {
                 throw new Error('Passwords must be a valid array');
             }
-            if (emails.length !== passwords.length) {
-                throw new Error('Emails and passwords arrays must have the same length.');
-            }
+    
             if (!url) {
                 throw new Error('URL is required');
             }
-
-            // Log incoming data
-            console.log('[BREVO DEBUG] Incoming data:', {
-                emailsCount: emails.length,
-                passwordsCount: passwords.length,
-                url
-            });
-
-            // Prepare email content for each recipient
-            const messageVersions = emails.map((email, index) => ({
-                to: [{ email }],
+    
+            if (emails.length !== passwords.length) {
+                throw new Error('Emails and passwords arrays must have the same length.');
+            }
+    
+            const sendSmtpEmail = {
+                sender: {
+                    email: 'stealth.mvp@gmail.com',
+                    name: 'Job Bolt'
+                },
                 subject: 'Your Interview Invite',
                 htmlContent: `
                     <p>Hello,</p>
-                    <p>This is a test invite for your interview on Job-Bolt.</p>
-                    <p>URL: <a href="${url}">${url}</a></p>
-                    <p><strong>Password:</strong> ${passwords[index]}</p>
+                    <p>You have been invited for an interview on Job-Bolt.</p>
+                    <p>Please use the following credentials to access your interview.</p>
                     <p>Best regards,</p>
                     <p>Job Bolt Team</p>
                 `,
-            }));
-
-            // Create the email request
-            const sendSmtpEmail = {
-                sender: { 
-                    email: 'stealth.mvp@gmail.com', 
-                    name: 'Job Bolt'
-                },
-                messageVersions: messageVersions,
-                // Add these recommended fields
-                tags: ['interview-invite'],
-                scheduledAt: new Date().toISOString()
+                messageVersions: emails.map((email, index) => ({
+                    to: [{
+                        email: email
+                    }],
+                    subject: 'Your Interview Invite',
+                    htmlContent: `
+                        <p>Hello,</p>
+                        <p>You have been invited for an interview on Job-Bolt.</p>
+                        <p>Please use the following credentials to access your interview:</p>
+                        <p>URL: <a href="${url}">${url}</a></p>
+                        <p><strong>Password:</strong> ${passwords[index]}</p>
+                        <p>Best regards,</p>
+                        <p>Job Bolt Team</p>
+                    `
+                }))
             };
-
-            // Log the complete request
+    
             console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
-
-            // Send the email
+    
             const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-            
-            // Log success
             console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
-
+    
             return response;
         } catch (error) {
-            console.error('[BREVO ERROR] Error message:', error.message);
-            console.error('[BREVO ERROR] Stack trace:', error.stack);
+            console.error('[BREVO ERROR] Full error:', {
+                message: error.message,
+                response: error.response?.text,
+                body: error.response?.body
+            });
+            
             throw new Error(`Brevo API Error: ${error.message}`);
         }
     }
