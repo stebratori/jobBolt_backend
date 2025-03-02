@@ -1,9 +1,9 @@
 // chatgptRoutes.js
 import express from 'express';
-import chatGptService from '../services/chatGptService.js';
-import verifyToken from "../utils/verifyToken.js";
+import ChatGptService from '../services/chatGptService.js';
 
 const router = express.Router();
+const chatGptService = new ChatGptService()
 
 // Route for sending messages to ChatGPT
 router.post('/send-message', async (req, res, next) => {
@@ -11,6 +11,16 @@ router.post('/send-message', async (req, res, next) => {
     const { conversation } = req.body;
     const { reply, usage } = await chatGptService.sendMessage(conversation);
     res.json({ reply, usage });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/chat/questions/regenerate', async (req, res, next) => {
+  try {
+    const { allQuestions, questionToRegenerate, rejectedQuestions } = req.body;
+    const { newQuestion } = await chatGptService.regenerateQuestion(allQuestions, questionToRegenerate, rejectedQuestions);
+    res.json({ newQuestion });
   } catch (error) {
     next(error);
   }

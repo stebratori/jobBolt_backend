@@ -1,58 +1,88 @@
 import Brevo from '@getbrevo/brevo';
 
-export const sendBulkEmails = async (emails) => {
-  try {
-    console.log('[DEBUG] Starting sendBulkEmails with emails:', emails);
+export default class BrevoService {
+    constructor() {
+        if (!process.env.BREVO_API_KEY) {
+            throw new Error('BREVO_API_KEY is not configured');
+        }
 
-    // Initialize the API client
-    const defaultClient = Brevo.ApiClient.instance;
-    console.log('[DEBUG] Brevo API Client initialized');
-    
-    // Configure API key authorization
-    const apiKey = defaultClient.authentications['api-key'];
-    apiKey.apiKey = process.env.BREVO_API_KEY;
-    
-    if (!process.env.BREVO_API_KEY) {
-      throw new Error('BREVO_API_KEY is not configured');
+        // Initialize the API client
+        const defaultClient = Brevo.ApiClient.instance;
+        this.apiKey = defaultClient.authentications['api-key'];
+        this.apiKey.apiKey = process.env.BREVO_API_KEY;
+
+        this.apiInstance = new Brevo.TransactionalEmailsApi();
     }
-    console.log('[DEBUG] API Key configured');
 
-    const apiInstance = new Brevo.TransactionalEmailsApi();
-    console.log('[DEBUG] TransactionalEmailsApi instance created');
-
-    // Define subject and body
-    const subject = 'Your Interview Invite';
-    const body = `
-      <p>Hello,</p>
-      <p>This is a test invite for your interview on Job-Bolt.</p>
-      <p>url: https://job-bolt.com/?jobID=BIBii97YBrgRrLZPae37&companyID=RWTb9Z2GGePwa4oGtOilfJeNbKZ2</p>
-      <p>password: 302987</p>
-      <p>Best regards,</p>
-      <p>Job Bolt Team</p>
-    `;
-
-    // Create the email request
-    const sendSmtpEmail = {
-      sender: { email: 'stealth.mvp@gmail.com', name: 'Job Bolt' },
-      to: emails.map((email) => ({ email })),
-      subject: subject,
-      htmlContent: body,
-    };
-
-    console.log('[DEBUG] Email request prepared:', JSON.stringify(sendSmtpEmail, null, 2));
+    /**
+     * Sends bulk emails with individual passwords to candidates.
+     * @param {string[]} emails - List of recipient emails.
+     * @param {string[]} passwords - Corresponding list of passwords.
+     * @param {string} url - Interview link to include in the email.
+     * @returns {Promise<Object>} - API response from Brevo.
+     */
+    async sendBulkEmailsWithPasswords(emails, passwords, url) {
+        try {
+            if (!emails || !Array.isArray(emails)) {
+                throw new Error('Emails must be a valid array');
+            }
     
-    // Send the email
-    console.log('[DEBUG] Attempting to send email...');
-    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log('[DEBUG] Email sent successfully:', JSON.stringify(response, null, 2));
+            if (!passwords || !Array.isArray(passwords)) {
+                throw new Error('Passwords must be a valid array');
+            }
     
-    return response;
-  } catch (error) {
-    console.error('[BREVO ERROR] Full error object:', error);
-    console.error('[BREVO ERROR] Error message:', error.message);
-    console.error('[BREVO ERROR] Error response:', error.response?.data);
-    console.error('[BREVO ERROR] Stack trace:', error.stack);
+            if (!url) {
+                throw new Error('URL is required');
+            }
     
-    throw new Error(`Brevo API Error: ${error.message}`);
-  }
+            if (emails.length !== passwords.length) {
+                throw new Error('Emails and passwords arrays must have the same length.');
+            }
+    
+            const sendSmtpEmail = {
+                sender: {
+                    email: 'stealth.mvp@gmail.com',
+                    name: 'Job Bolt'
+                },
+                subject: 'Your Interview Invite',
+                htmlContent: `
+                    <p>Hello,</p>
+                    <p>You have been invited for an interview on Job-Bolt.</p>
+                    <p>Please use the following credentials to access your interview.</p>
+                    <p>Best regards,</p>
+                    <p>Job Bolt Team</p>
+                `,
+                messageVersions: emails.map((email, index) => ({
+                    to: [{
+                        email: email
+                    }],
+                    subject: 'Your Interview Invite',
+                    htmlContent: `
+                        <p>Hello,</p>
+                        <p>You have been invited for an interview on Job-Bolt.</p>
+                        <p>Please use the following credentials to access your interview:</p>
+                        <p>URL: <a href="${url}">${url}</a></p>
+                        <p><strong>Password:</strong> ${passwords[index]}</p>
+                        <p>Best regards,</p>
+                        <p>Job Bolt Team</p>
+                    `
+                }))
+            };
+    
+            console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
+    
+            const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+            console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
+    
+            return response;
+        } catch (error) {
+            console.error('[BREVO ERROR] Full error:', {
+                message: error.message,
+                response: error.response?.text,
+                body: error.response?.body
+            });
+            
+            throw new Error(`Brevo API Error: ${error.message}`);
+        }
+    }
 }

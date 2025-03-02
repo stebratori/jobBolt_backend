@@ -1,6 +1,6 @@
 // firebaseRoutes.js
 import express from 'express';
-import FirebaseService from '../services/firebaseService.js'; 
+import FirebaseService from '../services/firebaseService.js';
 
 const router = express.Router();
 const firebaseService = new FirebaseService();
@@ -31,7 +31,7 @@ router.get('/job-posting/:companyId/:jobId', async (req, res, next) => {
     }
 });
 
-// Route for creating a new Job Post
+// Route for creating a new Job Post //
 router.post('/job-posting', async (req, res, next) => {
     const jobPosting = req.body;
     try {
@@ -68,15 +68,56 @@ router.post('/company', async (req, res, next) => {
     }
 });
 
+router.post('/store-conversation', async (req, res, next) => {
+  const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, conversation } = req.body;
+
+  // Validate required fields
+  if (!companyID || !jobID || !interviewID || !conversation) {
+      return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+      const result = await firebaseService.storeConversation({
+          companyID,
+          jobID,
+          interviewID,
+          applicantID,
+          applicantName,
+          applicantEmail,
+          conversation
+      });
+
+      res.status(201).json({ message: result});
+  } catch (error) {
+      next(error);  // Pass error to global error handler
+  }
+});
+
+router.get('/interview-results', async (req, res, next) => {
+  try {
+    const { companyID, jobID } = req.query; 
+    if (!companyID || !jobID) {
+      return res.status(400).json({ success: false, error: "Missing required query parameters: companyID, jobID" });
+    }
+    const interviewResults = await firebaseService.getInterviewResults(companyID, jobID);
+    if (!interviewResults.success) {
+      return res.status(404).json(interviewResults); 
+    }
+    res.status(200).json(interviewResults);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // DEMO METHOD
 // Route for getting all interview feedback
 router.get('/interview-feedback', async (req, res, next) => {
-    try {
-      const feedbackList = await firebaseService.getAllInterviewFeedback();
-      res.status(200).json(feedbackList); // Send the feedback list as a response
-    } catch (error) {
-      next(error);
-    }
+  try {
+    const feedbackList = await firebaseService.getAllInterviewFeedback();
+    res.status(200).json(feedbackList); // Send the feedback list as a response
+  } catch (error) {
+    next(error);
+  }
 });
 
 // DEMO METHOD

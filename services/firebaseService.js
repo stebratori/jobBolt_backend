@@ -1,23 +1,37 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import URLManager from './URLManager.js';
-import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
+//import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
+
 export default class FirebaseService {
   constructor() {
-    try {
-      if (!admin.apps.length) {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccounts),
-        });
+    if (!admin.apps.length) {
+      // if (process.env.ENVIRONMENT = "LOCAL") {
+      //   admin.initializeApp({
+      //     credential: admin.credential.cert(serviceAccounts),
+      //   });
+      //   console.log('[Firebase] initialized locally');
+      // }
+      // else {
+        const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
-        console.log('[Firebase] initialized');
-      }
-      this.admin = admin;
-      this.firestore = admin.firestore();
-    } catch (e) {
-      console.log(e)
-    }
+        // Fix double-escaped newlines in private key
+        if (firebaseConfig.private_key) {
+            firebaseConfig.private_key = firebaseConfig.private_key
+              .replace(/\\\\n/g, '\n')  // Handle double-escaped
+              .replace(/\\n/g, '\n');    // Handle single-escaped
+            }
 
+            admin.initializeApp({
+                credential: admin.credential.cert(firebaseConfig),
+            });
+
+          console.log('[Firebase] initialized');
+        }
+      //}
+
+
+    this.firestore = admin.firestore();
   }
 
   /**
@@ -189,58 +203,158 @@ export default class FirebaseService {
     }
   }
 
-  // DEMO ONLY Method
-  async getAllInterviewFeedback() {
+  async storeConversation({ companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, conversation }) {
     try {
-      const collectionRef = this.firestore.collection('interview_analysis');
-      const snapshot = await collectionRef.get();
+        if (!companyID || !jobID || !interviewID || !applicantID || !applicantName || !applicantEmail || !conversation) {
+            throw new Error("Missing required fields");
+        }
+        const collectionName = `interviews_${companyID}`;
+        const docID = interviewID;
+        const collectionRef = this.firestore.collection(collectionName);
+        const docRef = collectionRef.doc(docID);
 
-      const feedbackList = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        console.log('Interview data:', data);
-        return {
-          id: doc.id,
-          overall_rating: data.overall_rating,
-          pass_to_next_stage: data.pass_to_next_stage,
-          final_feedback: data.final_feedback,
-          username: data.username,
-          jobId: data.jobId || undefined,
-          date: data.date,
+        // Fetch document snapshot to check if it exists
+        const docSnapshot = await docRef.get();
+        if (!docSnapshot.exists) {
+            const newDocument = {
+              jobID,
+              companyID,
+              interviewID,
+              applicantID,
+              applicantName,
+              applicantEmail,
+              startingTime: admin.firestore.FieldValue.serverTimestamp(),
+              conversation: conversation || []
+            };
+            await docRef.set(newDocument);
+        } else {
+            const updatedData = {
+              conversation: conversation
+            };
+            await docRef.set(updatedData, { merge: true });
+        }
+    } catch (error) {
+        throw error;
+    }
+  }
+
+  async storeInterviewAnalysis({ companyID, jobID, interviewID, interviewAnalysis, duration }) {
+    try {
+        if (!companyID || !jobID || !interviewID || !interviewAnalysis) {
+          const missingFields = [
+              !companyID && 'companyID',
+              !jobID && 'jobID',
+              !interviewID && 'interviewID',
+              !interviewAnalysis && 'interviewAnalysis'
+          ].filter(Boolean);
+          throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+        const collectionName = `interviews_${companyID}`;
+        const docID = interviewID;
+        const collectionRef = this.firestore.collection(collectionName);
+        const docRef = collectionRef.doc(docID);
+        const docSnapshot = await docRef.get();
+        if (!docSnapshot.exists) {
+            throw new Error(`❌ Interview document ${docID} not found in collection ${collectionName}`);
+        }
+        const updatedData = {
+          interviewAnalysis,
+          analysisCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
+          duration
         };
-      });
+        await docRef.set(updatedData, { merge: true });
 
-      console.log('Retrieved interview feedback:', feedbackList);
-      return feedbackList;
+        console.log(`✅ Interview analysis stored successfully for interviewID: ${interviewID}`);
+        return { success: true };
     } catch (error) {
-      console.error('Error retrieving interview feedback:', error);
-      throw error;
+      console.error(`🔥 Error storing interview analysis for interviewID ${interviewID}:`, error);
+      // Handle specific error cases
+      if (error.code === 'permission-denied') {
+          return { success: false,error: 'Permission denied: Unable to access the interview document'};
+      }
+      if (error.code === 'resource-exhausted') {
+          return { success: false,error: 'Database quota exceeded. Please try again later'};
+      }
+      return { success: false, error: error.message };
     }
   }
 
-  // DEMO ONLY Method
-  async storeInterviewFeedback(feedback) {
+  async getInterviewResults(companyID, jobID) {
     try {
-      const collectionRef = this.firestore.collection('interview_analysis');
+        if (!companyID || !jobID) {
+            throw new Error("Missing required fields: companyID, jobID");
+        }
+        const collectionName = `interviews_${companyID}`;
+        const collectionRef = this.firestore.collection(collectionName);
+        const querySnapshot = await collectionRef.where("jobID", "==", jobID).get();
 
-      const documentToStore = {
-        date: feedback.date,
-        overall_rating: feedback.overall_rating,
-        pass_to_next_stage: feedback.pass_to_next_stage,
-        final_feedback: feedback.final_feedback,
-        jobId: feedback.jobId,
-        username: feedback.username,
-      };
+        if (querySnapshot.empty) {
+            return { success: false, message: `No interviews found for jobID: ${jobID}` };
+        }
 
-      console.log('Attempting to save the interview feedback:', documentToStore);
-      await collectionRef.add(documentToStore);  
-      console.log('Interview feedback successfully stored.');
+        let interviews = [];
+        querySnapshot.forEach(doc => {
+            interviews.push({ id: doc.id, ...doc.data() });
+        });
+
+        return { success: true, interviews };
+
     } catch (error) {
-      console.error('Error storing interview feedback:', error);
-      throw error;  // Rethrow to allow the backend route to handle it
+        console.error(`🔥 Error retrieving interview results for jobID ${jobID}:`, error);
+        return { success: false, error: error.message };
     }
   }
 
+  // static async updateCandidate(candidate) {
+  //   const collectionName = `interviews_${companyID}`;
+  //   const docID = interviewID;
+  //   const collectionRef = this.firestore.collection(collectionName);
+  //   const docRef = collectionRef.doc(docID);
 
+  //   const docSnapshot = await docRef.get();
+  //   if (!docSnapshot.exists) {
+  //       throw new Error(`❌ Interview document ${docID} not found in collection ${collectionName}`);
+  //   }
+
+  //   await docRef.set({ candidate }, { merge: true }); // Ensures existing fields are retained
+
+  //   console.log(`✅ Candidate updated successfully for interviewID: ${interviewID}`);
+
+  //   return candidate;
+  // }
+
+  async storeCandidatesInJobPosting(companyID, jobID, newCandidates) {
+    try {
+        if (!companyID || !jobID || !Array.isArray(newCandidates)) {
+            throw new Error("Missing required fields or candidates is not an array");
+        }
+
+        const collectionRef = admin.firestore().collection('job_postings');
+        const jobDocRef = collectionRef.doc(jobID);
+
+        // Fetch document snapshot to check if it exists
+        const jobDocSnapshot = await jobDocRef.get();
+        if (!jobDocSnapshot.exists) {
+            throw new Error(`❌ Job posting document ${jobID} not found for company ${companyID}`);
+        }
+
+        // Get existing candidates array or initialize empty array if it doesn't exist
+        const jobData = jobDocSnapshot.data();
+        const existingCandidates = jobData.candidates || [];
+
+        // Simply append new candidates to existing array (or create new array if none exists)
+        const updatedCandidates = [...existingCandidates, ...newCandidates];
+
+        await jobDocRef.update({ candidates: updatedCandidates });
+
+        console.log(`✅ Candidates successfully added to job posting: ${jobID}`);
+        return { success: true };
+
+    } catch (error) {
+        console.error(`🔥 Error storing candidates in job posting ${jobID}:`, error);
+        return { success: false, error: error.message };
+    }
+}
 
 
 

@@ -7,6 +7,8 @@ import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
 import firebaseRoutes from './routes/firebaseRoutes.js';
 import authRoutes from './routes/auth.js';
+import analyzeInterviewRoutes from './routes/analyzeInterviewRoutes.js';
+
 // Services
 import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
@@ -27,11 +29,14 @@ app.use(bodyParser.json());
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
 const stripe = new StripeService(stripeSecretKey, stripeEndpointSecret);
-// Services initialization
 const heyGenService = new HeyGenService();
-const firebaseService = new FirebaseService(); 
 
-// Configure middleware based on route
+// Stripe webhook route - must come before other routes that use express.json()
+app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  stripe.handleWebhook(req, res);
+});
+
+// Configure middleware based on route (should come second)
 app.use((req, res, next) => {
   if (req.originalUrl === '/webhook') {
     next();
@@ -40,10 +45,11 @@ app.use((req, res, next) => {
   }
 });
 
-// Routes
+// Routes (at the end)
 app.use('/api/chatgpt', chatGptRoutes);
 app.use('/api/brevo', brevoRoutes);
 app.use('/api/firebase', firebaseRoutes);
+app.use('/api/analyze', analyzeInterviewRoutes);
 app.use('/api/auth', authRoutes);
 
 // Middleware to conditionally apply JSON parsing
@@ -55,11 +61,7 @@ app.use((req, res, next) => {
   }
 });
 
-// Stripe webhook route - must come before other routes that use express.json()
-app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  stripe.handleWebhook(req, res);
-});
-
+// Stripe
 app.post('/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.createCheckoutSession(req.body);
@@ -79,6 +81,11 @@ app.get('/api/heygen/token', async (req, res) => {
   }
 });
 
+// Default route for "/"
+app.get('/', (req, res) => {
+  res.send('Welcome to the Job Bolt API <3');
+});
+
 // Global error handler with detailed error information
 app.use((err, req, res, next) => {
   console.error('Detailed Error:', {
@@ -95,11 +102,6 @@ app.use((err, req, res, next) => {
       response: err.response?.data
     })
   });
-});
-
-// Default route for "/"
-app.get('/', (req, res) => {
-  res.send('Welcome to the Job Bolt API <3');
 });
 
 // Start the server
