@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors'; 
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 
 // Routes
 import chatGptRoutes from './routes/chatGptRoutes.js';
@@ -14,6 +16,15 @@ import HeyGenService from './services/heyGenService.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Create an HTTP server for both Express and WebSocket
+const server = createServer(app);
+const webSocketService = new WebSocketService(server);
+
+// Expose WebSocket messaging for other modules
+export const sendWebSocketMessage = (companyId, message) => {
+  webSocketService.sendMessage(companyId, message);
+};
 
 app.use(cors({
   origin: ['https://job-bolt.com', 'http://localhost:5555'], 
@@ -92,7 +103,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start the server
-app.listen(PORT, () => {
+// Start the HTTP & WebSocket server
+server.listen(PORT, () => {
   console.log(`Ljubav svima <3`);
 });
