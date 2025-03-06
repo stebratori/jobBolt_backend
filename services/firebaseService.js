@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import URLManager from './URLManager.js';
-import { sendWebSocketMessage } from '../server.js';
+//import { sendWebSocketMessage } from '../server.js';
 //import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
 
 export default class FirebaseService {
@@ -115,11 +115,11 @@ export default class FirebaseService {
 
         console.log(`[Firebase] Tokens updated for company ID ${companyId}. New balance: ${currentTokens + tokenAmount}`);
         // Send WebSocket notification
-        sendWebSocketMessage(companyId, {
-          type: 'TOKEN_UPDATE',
-          companyId,
-          newTokenBalance: currentTokens + tokenAmount
-      });
+        // sendWebSocketMessage(companyId, {
+        //   type: 'TOKEN_UPDATE',
+        //   companyId,
+        //   newTokenBalance: currentTokens + tokenAmount
+        // });
     } catch (error) {
         console.error('[Firebase] [Error] in handleTokenPurchaseCompleted:', error.message);
         throw error;
