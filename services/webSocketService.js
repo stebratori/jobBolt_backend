@@ -5,7 +5,21 @@ class WebSocketService {
         this.wss = new WebSocketServer({ server });
         this.connectedClients = new Map(); // Stores companyId -> WebSocket instance
 
-        this.wss.on('connection', (ws, req) => this.handleConnection(ws, req));
+        this.wss.on('connection', (ws, req) => {
+            console.log(`✅ WebSocket connected!`);
+            
+            // ✅ Keep connection alive by sending pings
+            const keepAlive = setInterval(() => {
+                if (ws.readyState === ws.OPEN) {
+                    ws.send(JSON.stringify({ type: "ping" }));
+                } else {
+                    clearInterval(keepAlive);
+                }
+            }, 50000);
+
+            // ✅ Call handleConnection to register the client
+            this.handleConnection(ws, req);
+        }); // ✅ Closed the on('connection') block properly
     }
 
     handleConnection(ws, req) {
