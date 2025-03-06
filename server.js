@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors'; 
 import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
+import WebSocketService from './services/webSocketService.js'; 
 
 // Routes
 import chatGptRoutes from './routes/chatGptRoutes.js';
@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 
 // Create an HTTP server for both Express and WebSocket
 const server = createServer(app);
-const webSocketService = new webSocketService(server);
+const webSocketService = new WebSocketService(server);
 
 // Expose WebSocket messaging for other modules
 export const sendWebSocketMessage = (companyId, message) => {
