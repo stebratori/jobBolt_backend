@@ -219,6 +219,7 @@ export default class FirebaseService {
           id: docSnap.id,
           name: data.name,
           email: data.email,
+          tokens: data.tokens ?? 0,
         };
       } else {
         console.log('No company found with ID:', companyId);
