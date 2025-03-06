@@ -104,7 +104,7 @@ export default class FirebaseService {
 
         // Get existing token count or default to 0
         const companyData = companySnapshot.data();
-        const currentTokens = companyData.tokens || 0;
+        const currentTokens = Number(companyData.tokens) || 0;
 
         // Update the tokens and changelog
         await companyRef.update({
