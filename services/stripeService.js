@@ -70,18 +70,28 @@ export default class StripeService {
   // Custom method to handle attached PaymentMethod
   async handleCheckoutSessionCompleted(session) {
     try {
-      const { companyId, productId, tokenAmount } = session.metadata;
-      if (!companyId || !productId || !tokenAmount) {
-        throw new Error('[Server Stripe] Missing companyId metadata in the session');
-      }
-      const firebaseService = new FirebaseService();
-      console.log('[Server Stripe] handleTokenPurchaseCompleted...')
-      await firebaseService.handleTokenPurchaseCompleted(companyId, tokenAmount)
-  
+        const { companyId, productId, tokenAmount } = session.metadata;
+
+        if (!companyId || !productId || !tokenAmount) {
+            throw new Error('[Server Stripe] Missing metadata in the session');
+        }
+
+        // Convert tokenAmount to a number
+        const tokenAmountNumber = Number(tokenAmount);
+
+        if (isNaN(tokenAmountNumber) || tokenAmountNumber <= 0) {
+            throw new Error(`[Server Stripe] Invalid tokenAmount: ${tokenAmount}`);
+        }
+
+        const firebaseService = new FirebaseService();
+        console.log('[Server Stripe] handleTokenPurchaseCompleted...');
+        await firebaseService.handleTokenPurchaseCompleted(companyId, tokenAmountNumber);
+
     } catch (error) {
-      console.error('[Server Stripe]  Error in handleCheckoutSessionCompleted:', error.message);
+        console.error('[Server Stripe] Error in handleCheckoutSessionCompleted:', error.message);
     }
   }
+
 
   async createCheckoutSession(params) {
     const { companyId, productId, productPrice, tokenAmount, origin } = params;
