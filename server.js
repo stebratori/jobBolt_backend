@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 
 // Create an HTTP server for both Express and WebSocket
 const server = createServer(app);
-const webSocketService = new WebSocketService(server);
+const webSocketService = new webSocketService(server);
 
 // Expose WebSocket messaging for other modules
 export const sendWebSocketMessage = (companyId, message) => {
