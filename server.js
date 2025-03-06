@@ -29,6 +29,7 @@ const heyGenService = new HeyGenService();
 
 // Stripe webhook route - must come before other routes that use express.json()
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  console.log(`Stripe Webhook received`);
   stripe.handleWebhook(req, res);
 });
 
@@ -49,6 +50,7 @@ app.use('/api/analyze', analyzeInterviewRoutes);
 
 // Stripe
 app.post('/create-checkout-session', async (req, res) => {
+  console.log(`Creating checkout session...`);
   try {
     const session = await stripe.createCheckoutSession(req.body);
     res.json({ url: session.url });

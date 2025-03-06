@@ -5,14 +5,14 @@ import URLManager from './URLManager.js';
 
 export default class FirebaseService {
   constructor() {
-    if (!admin.apps.length) {
-      // if (process.env.ENVIRONMENT = "LOCAL") {
-      //   admin.initializeApp({
-      //     credential: admin.credential.cert(serviceAccounts),
-      //   });
-      //   console.log('[Firebase] initialized locally');
-      // } 
-      // else {
+     if (!admin.apps.length) {
+    //   if (process.env.ENVIRONMENT = "LOCAL") {
+    //     admin.initializeApp({
+    //       credential: admin.credential.cert(serviceAccounts),
+    //     });
+    //     console.log('[Firebase] initialized locally');
+    //   } 
+    //   else {
         const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
         // Fix double-escaped newlines in private key
@@ -78,6 +78,47 @@ export default class FirebaseService {
       throw error;
     }
   }
+
+  async handleTokenPurchaseCompleted(companyId, tokenAmount) {
+    try {
+        console.log('[Server Stripe] update companyID:', companyId)
+        const companyRef = this.firestore.collection('companies').doc(companyId);
+        const companySnapshot = await companyRef.get();
+
+        if (!companySnapshot.exists) {
+            throw new Error(`[Firebase] Company with ID ${companyId} does not exist`);
+        }
+
+        // Get current date
+        const now = new Date();
+
+        // Format: DD.Month.YYYY_HH:MM
+        const day = now.getDate().toString().padStart(2, '0');
+        const month = now.toLocaleString('en-US', { month: 'long' }); // Full month name
+        const year = now.getFullYear();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+
+        const formattedTimestamp = `${day}.${month}.${year}_${hours}:${minutes}`;
+        const changelogEntry = `purchasedTokens=${tokenAmount}_at:${formattedTimestamp}`;
+
+        // Get existing token count or default to 0
+        const companyData = companySnapshot.data();
+        const currentTokens = companyData.tokens || 0;
+
+        // Update the tokens and changelog
+        await companyRef.update({
+            tokens: currentTokens + tokenAmount,
+            changelog: admin.firestore.FieldValue.arrayUnion(changelogEntry),
+        });
+
+        console.log(`[Firebase] Tokens updated for company ID ${companyId}. New balance: ${currentTokens + tokenAmount}`);
+    } catch (error) {
+        console.error('[Firebase] [Error] in handleTokenPurchaseCompleted:', error.message);
+        throw error;
+    }
+  }
+
   
   async getJobPostingsByCompanyId(companyId) {
     try {
@@ -300,24 +341,6 @@ export default class FirebaseService {
     }
   }
 
-  // static async updateCandidate(candidate) {
-  //   const collectionName = `interviews_${companyID}`;
-  //   const docID = interviewID;
-  //   const collectionRef = this.firestore.collection(collectionName);
-  //   const docRef = collectionRef.doc(docID);
-
-  //   const docSnapshot = await docRef.get();
-  //   if (!docSnapshot.exists) {
-  //       throw new Error(`❌ Interview document ${docID} not found in collection ${collectionName}`);
-  //   }
-
-  //   await docRef.set({ candidate }, { merge: true }); // Ensures existing fields are retained
-
-  //   console.log(`✅ Candidate updated successfully for interviewID: ${interviewID}`);
-
-  //   return candidate;
-  // }
-
   async storeCandidatesInJobPosting(companyID, jobID, newCandidates) {
     try {
         if (!companyID || !jobID || !Array.isArray(newCandidates)) {
@@ -342,14 +365,13 @@ export default class FirebaseService {
 
         await jobDocRef.update({ candidates: updatedCandidates });
 
-        console.log(`✅ Candidates successfully added to job posting: ${jobID}`);
         return { success: true };
         
     } catch (error) {
         console.error(`🔥 Error storing candidates in job posting ${jobID}:`, error);
         return { success: false, error: error.message };
     }
-}
+  }
 
 
 
