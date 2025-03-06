@@ -21,6 +21,8 @@ const PORT = process.env.PORT || 3000;
 const server = createServer(app);
 const webSocketService = new WebSocketService(server);
 
+console.log("🚀 WebSocket server initialized!");
+
 // Expose WebSocket messaging for other modules
 export const sendWebSocketMessage = (companyId, message) => {
   webSocketService.sendMessage(companyId, message);
