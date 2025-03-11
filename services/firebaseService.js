@@ -374,8 +374,8 @@ export default class FirebaseService {
 
         await jobDocRef.update({ candidates: updatedCandidates });
 
-        webSocketService.sendMessage(companyID, {
-          type: "NEW_CANDIDATES",
+        sendWebSocketMessage(companyID, {
+          type: 'NEW_CANDIDATES',
           jobID,
           candidates: updatedCandidates
         });
