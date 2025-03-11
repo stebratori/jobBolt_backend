@@ -119,7 +119,7 @@ export default class FirebaseService {
           type: 'TOKEN_UPDATE',
           companyId,
           newTokenBalance: currentTokens + tokenAmount
-      });
+        });
     } catch (error) {
         console.error('[Firebase] [Error] in handleTokenPurchaseCompleted:', error.message);
         throw error;
@@ -202,6 +202,7 @@ export default class FirebaseService {
         interviewURL: url,
       };
       await jobDocRef.set(documentToStore); 
+      sendWebSocketMessage(companyId, { type: 'ADDED_NEW_JOB' });
     } catch (error) {
       console.error("Error storing job posting:", error);
       throw new Error('Failed to add new job posting');
