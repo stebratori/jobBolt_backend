@@ -202,7 +202,7 @@ export default class FirebaseService {
         interviewURL: url,
       };
       await jobDocRef.set(documentToStore); 
-      sendWebSocketMessage(companyId, { type: 'ADDED_NEW_JOB' });
+      sendWebSocketMessage(jobPosting.companyId, { type: 'ADDED_NEW_JOB' });
     } catch (error) {
       console.error("Error storing job posting:", error);
       throw new Error('Failed to add new job posting');
