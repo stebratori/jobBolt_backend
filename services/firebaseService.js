@@ -200,7 +200,7 @@ export default class FirebaseService {
         companyId: jobPosting.companyId,
         status: 'inactive',
         interviewURL: url,
-        dateCreated: this.firestore.Timestamp.now(),
+        dateCreated: Date.now(),
       };
       await jobDocRef.set(documentToStore); 
       sendWebSocketMessage(jobPosting.companyId, { type: 'ADDED_NEW_JOB' });
