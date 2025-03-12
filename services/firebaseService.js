@@ -200,6 +200,7 @@ export default class FirebaseService {
         companyId: jobPosting.companyId,
         status: 'inactive',
         interviewURL: url,
+        dateCreated: this.firestore.Timestamp.now(),
       };
       await jobDocRef.set(documentToStore); 
       sendWebSocketMessage(jobPosting.companyId, { type: 'ADDED_NEW_JOB' });
@@ -308,6 +309,13 @@ export default class FirebaseService {
           duration
         };
         await docRef.set(updatedData, { merge: true });
+
+        // Update the jobPosting's interviewFinished field
+        const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+        await jobDocRef.set(
+            { interviewFinished: admin.firestore.FieldValue.increment(1) }, 
+            { merge: true }
+        );
         
         console.log(`✅ Interview analysis stored successfully for interviewID: ${interviewID}`);
         return { success: true };
@@ -323,6 +331,39 @@ export default class FirebaseService {
       return { success: false, error: error.message };
     }
   }
+
+  async incrementInterviewStarted({ companyID, jobID }) {
+    try {
+        if (!companyID || !jobID) {
+            const missingFields = [
+                !companyID && 'companyID',
+                !jobID && 'jobID'
+            ].filter(Boolean);
+            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+
+        const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+
+        // Increment the interviewStarted field or create it if it doesn't exist
+        await jobDocRef.set(
+            { interviewStarted: admin.firestore.FieldValue.increment(1) },
+            { merge: true }
+        );
+
+        console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
+        return { success: true };
+    } catch (error) {
+        console.error(`🔥 Error updating interviewStarted for jobID ${jobID}:`, error);
+        if (error.code === 'permission-denied') {
+            return { success: false, error: 'Permission denied: Unable to update job posting' };
+        }
+        if (error.code === 'resource-exhausted') {
+            return { success: false, error: 'Database quota exceeded. Please try again later' };
+        }
+        return { success: false, error: error.message };
+    }
+}
+
 
   async getInterviewResults(companyID, jobID) {
     try {

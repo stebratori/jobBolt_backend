@@ -109,27 +109,20 @@ router.get('/interview-results', async (req, res, next) => {
   }
 });
 
-// DEMO METHOD
-// Route for getting all interview feedback
-router.get('/interview-feedback', async (req, res, next) => {
+router.post('/increment-interview-started', async (req, res, next) => {
+  const { companyID, jobID } = req.body;
+
+  // Validate required fields
+  if (!companyID || !jobID) {
+    return res.status(400).json({ error: 'Missing required fields: companyID and jobID' });
+  }
+
   try {
-    const feedbackList = await firebaseService.getAllInterviewFeedback();
-    res.status(200).json(feedbackList); // Send the feedback list as a response
+    const result = await firebaseService.incrementInterviewStarted({ companyID, jobID });
+    res.status(200).json({ message: 'Interview started count updated successfully', result });
   } catch (error) {
     next(error);
   }
-});
-
-// DEMO METHOD
-// Route for storing interview feedback
-router.post('/interview-feedback', async (req, res, next) => {
-    const feedback = req.body;
-    try {
-      await firebaseService.storeInterviewFeedback(feedback);
-      res.status(201).json({ message: 'Interview feedback stored successfully' });
-    } catch (error) {
-      next(error);  // Pass the error to the global error handler
-    }
 });
 
 export default router;
