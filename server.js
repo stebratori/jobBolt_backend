@@ -105,6 +105,24 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.post('/api/verify-password', (req, res) => {
+  // Extract password from the request body
+  const { password } = req.body;
+  
+  // Retrieve the correct password from environment variables
+  // (Make sure to set process.env.PASSWORD in your .env file)
+  const correctPassword = "JobBolt2025";
+
+  // Compare the provided password with the correct password
+  if (password === correctPassword) {
+    // Password is correct, return true
+    res.json(true);
+  } else {
+    // Password is incorrect, return false
+    res.json(false);
+  }
+});
+
 // Start the HTTP & WebSocket server
 server.listen(PORT, () => {
   console.log(`Ljubav svima <3`);
