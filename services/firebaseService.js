@@ -210,6 +210,37 @@ export default class FirebaseService {
     }
   }
 
+  async deleteJobPosting(companyId, jobId) {
+    try {
+      // Reference the job posting document by jobId
+      const jobDocRef = this.firestore.collection('job_postings').doc(jobId);
+      
+      // Retrieve the document to ensure it exists and verify company ownership
+      const doc = await jobDocRef.get();
+      if (!doc.exists) {
+        return { success: false, error: 'Job posting not found' };
+      }
+      
+      const jobData = doc.data();
+      // Verify that the job posting belongs to the provided companyId
+      if (jobData.companyId !== companyId) {
+        return { success: false, error: 'Job posting does not belong to the specified company' };
+      }
+      
+      // Delete the document
+      await jobDocRef.delete();
+      
+      // Optionally, you could send a websocket message or perform additional cleanup here
+      // sendWebSocketMessage(companyId, { type: 'DELETED_JOB' });
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting job posting:", error);
+      throw new Error("Failed to delete job posting");
+    }
+  }
+  
+
   async getCompanyById(companyId) {
     try {
       const docRef = this.firestore.collection('companies').doc(companyId);

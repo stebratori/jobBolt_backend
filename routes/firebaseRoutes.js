@@ -125,4 +125,26 @@ router.post('/increment-interview-started', async (req, res, next) => {
   }
 });
 
+// Route for deleting a job posting by CompanyID and JobID
+router.delete('/delete-job', async (req, res, next) => {
+  const { companyId, jobId } = req.body;
+
+  // Validate required fields
+  if (!companyId || !jobId) {
+      return res.status(400).json({ error: 'Missing required fields: companyId and jobId' });
+  }
+
+  try {
+      const deleteResult = await firebaseService.deleteJobPosting(companyId, jobId);
+
+      if (deleteResult.success) {
+          res.status(200).json({ message: 'Job posting deleted successfully' });
+      } else {
+          res.status(404).json({ error: 'Job posting not found or already deleted' });
+      }
+  } catch (error) {
+      next(error);
+  }
+});
+
 export default router;
