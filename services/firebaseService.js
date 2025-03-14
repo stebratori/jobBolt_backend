@@ -194,11 +194,11 @@ export default class FirebaseService {
       const url = URLManager.createUrlForJobPosting(jobID, jobPosting.companyId);
       
       const documentToStore = {
+        jobId: jobID,
         jobDescription: jobPosting.jobDescription,
         jobTitle: jobPosting.jobTitle,
         questions: jobPosting.questions,
         companyId: jobPosting.companyId,
-        status: 'inactive',
         interviewURL: url,
         dateCreated: Date.now(),
       };
