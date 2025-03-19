@@ -21,6 +21,7 @@ export default class UserService {
           id: UserService.generateUdid(),
           email: email,
           password: UserService.generatePassword(),
+          invitedAt: Date.now(),
         }));
         await firebaseService.storeCandidatesInJobPosting(companyID, jobID, candidates)
     
