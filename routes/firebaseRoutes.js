@@ -69,10 +69,13 @@ router.post('/company', async (req, res, next) => {
 });
 
 router.post('/store-conversation', async (req, res, next) => {
+  console.log("Received body:", JSON.stringify(req.body, null, 2)); // Log entire body
+
   const { companyID, jobID, interviewID, applicantID, applicantName, applicantEmail, conversation } = req.body;
 
   // Validate required fields
   if (!companyID || !jobID || !interviewID || !conversation) {
+      console.error("Missing required fields:", { companyID, jobID, interviewID, conversation });
       return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -87,11 +90,13 @@ router.post('/store-conversation', async (req, res, next) => {
           conversation
       });
 
-      res.status(201).json({ message: result});
+      res.status(201).json({ message: result });
   } catch (error) {
-      next(error);  // Pass error to global error handler
+      console.error("Error storing conversation:", error);  // Log the actual error
+      res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 });
+
 
 router.get('/interview-results', async (req, res, next) => {
   try {
