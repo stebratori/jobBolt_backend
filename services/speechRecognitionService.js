@@ -1,16 +1,17 @@
-import { createClient } from 'assemblyai';
+import AssemblyAI from 'assemblyai';
 
 class SpeechRecognitionService {
   constructor() {
     this.assemblyClients = new Map(); // Maps companyId => AssemblyAI streaming instance
     this.apiKey = process.env.ASSEMBLYAI_API_KEY;
+
     if (!this.apiKey) {
-      console.warn("❗ ASSEMBLY_API_KEY is not defined in your .env file");
+      console.warn("❗ ASSEMBLYAI_API_KEY is not defined in your .env file");
     }
   }
 
   async startAssemblyStream(companyId, onTranscript) {
-    const assembly = createClient({ apiKey: this.apiKey });
+    const assembly = new AssemblyAI({ apiKey: this.apiKey });
 
     const stream = await assembly.realtime.transcriber({
       sampleRate: 16000,
