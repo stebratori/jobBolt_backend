@@ -1,24 +1,24 @@
 import { WebSocketServer } from 'ws';
+import SpeechRecognitionService from './speechRecognitionService.js';
 
 class WebSocketService {
     constructor(server) {
-        console.log("🚀 Initializing WebSocket server..."); // Debug log
+        console.log("🚀 Initializing WebSocket server...");
         this.wss = new WebSocketServer({ server });
         this.connectedClients = new Map(); // Stores companyId -> WebSocket instance
+        this.speechService = new SpeechRecognitionService();
 
         this.wss.on('connection', (ws, req) => {
             console.log("✅ New WebSocket connection attempt");
 
-            // ✅ Keep connection alive by sending pings
             const keepAlive = setInterval(() => {
                 if (ws.readyState === ws.OPEN) {
                     ws.send(JSON.stringify({ type: "ping" }));
                 } else {
                     clearInterval(keepAlive);
                 }
-            }, 50000);
+            }, 30000);
 
-            // ✅ Call handleConnection to register the client
             this.handleConnection(ws, req);
         });
 
@@ -44,6 +44,10 @@ class WebSocketService {
         this.connectedClients.set(companyId, ws);
         console.log(`✅ WebSocket client connected for companyId: ${companyId}`);
 
+        ws.on('message', (data) => {
+            this.speechService.handleIncomingAudio(companyId, data, this.broadcastTranscript.bind(this));
+        });
+
         ws.on('close', () => this.handleDisconnect(companyId));
         ws.on('error', (error) => console.error(`⚠️ WebSocket error for companyId ${companyId}:`, error));
     }
@@ -51,6 +55,7 @@ class WebSocketService {
     handleDisconnect(companyId) {
         if (companyId) {
             this.connectedClients.delete(companyId);
+            this.speechService.stopAssemblyStream(companyId);
             console.log(`❌ WebSocket client disconnected for companyId: ${companyId}`);
         }
     }
@@ -63,6 +68,18 @@ class WebSocketService {
         } else {
             console.error(`❌ WebSocket send failed for ${companyId} - no active connection`);
         }
+    }
+
+    hasClient(companyId) {
+        return this.connectedClients.has(companyId);
+    }
+
+    broadcastTranscript(companyId, text) {
+        const message = {
+            type: 'TRANSCRIPT',
+            text,
+        };
+        this.sendMessage(companyId, message);
     }
 }
 
