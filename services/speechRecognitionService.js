@@ -10,42 +10,49 @@ class SpeechRecognitionService {
     }
   }
 
-  async startAssemblyStream(companyId, onTranscript) {
+  startAssemblyStream(companyId, onTranscript) {
     const assembly = new AssemblyAI({ apiKey: this.apiKey });
-
-    const stream = await assembly.realtime.transcriber({
+  
+    const stream = assembly.realtime.transcriber({
       sampleRate: 16000,
       format: 'pcm',
     });
-
-    stream.on('transcript', (msg) => {
-      if (msg.text) {
-        console.log(`📝 Transcript for ${companyId}:`, msg.text);
-        onTranscript(companyId, msg.text);
-      }
+  
+    return new Promise((resolve, reject) => {
+      stream.on('transcript', (msg) => {
+        if (msg.text) {
+          console.log(`📝 Transcript for ${companyId}:`, msg.text);
+          onTranscript(companyId, msg.text);
+        }
+      });
+  
+      stream.on('error', (err) => {
+        console.error(`🛑 AssemblyAI stream error for ${companyId}:`, err);
+        reject(err);
+      });
+  
+      stream.on('close', () => {
+        console.log(`🔌 AssemblyAI stream closed for ${companyId}`);
+      });
+  
+      stream.on('open', () => {
+        console.log(`🎙️ AssemblyAI WebSocket is now open for ${companyId}`);
+        this.assemblyClients.set(companyId, stream);
+        resolve();
+      });
     });
-
-    stream.on('error', (err) => {
-      console.error(`🛑 AssemblyAI stream error for ${companyId}:`, err);
-    });
-
-    stream.on('close', () => {
-      console.log(`🔌 AssemblyAI stream closed for ${companyId}`);
-    });
-
-    this.assemblyClients.set(companyId, stream);
-    console.log(`🎙️ AssemblyAI stream started for ${companyId}`);
   }
+  
 
   async handleIncomingAudio(companyId, audioBuffer, onTranscript) {
     let stream = this.assemblyClients.get(companyId);
-
+  
     if (!stream) {
       console.log(`🔧 No Assembly stream found for ${companyId}, starting one now...`);
       await this.startAssemblyStream(companyId, onTranscript);
       stream = this.assemblyClients.get(companyId);
     }
-
+  
     if (stream) {
       try {
         stream.sendAudio(Buffer.from(audioBuffer));
@@ -54,6 +61,7 @@ class SpeechRecognitionService {
       }
     }
   }
+  
 
   stopAssemblyStream(companyId) {
     const stream = this.assemblyClients.get(companyId);
