@@ -1,4 +1,4 @@
-import AssemblyAI from 'assemblyai';
+import { AssemblyAI } from 'assemblyai';
 
 class SpeechRecognitionService {
   constructor() {
