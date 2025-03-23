@@ -1,18 +1,19 @@
 import admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import URLManager from './URLManager.js';
+import { sendWebSocketMessage } from '../server.js';
 //import serviceAccounts from '../job-bolt-firebase-adminsdk-8k32j-8e3328f3c8.json' with { type: "json" };
 
 export default class FirebaseService {
   constructor() {
-    if (!admin.apps.length) {
-      // if (process.env.ENVIRONMENT = "LOCAL") {
-      //   admin.initializeApp({
-      //     credential: admin.credential.cert(serviceAccounts),
-      //   });
-      //   console.log('[Firebase] initialized locally');
-      // }
-      // else {
+     if (!admin.apps.length) {
+    //   if (process.env.ENVIRONMENT = "LOCAL") {
+    //     admin.initializeApp({
+    //       credential: admin.credential.cert(serviceAccounts),
+    //     });
+    //     console.log('[Firebase] initialized locally');
+    //   }
+    //   else {
         const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
         // Fix double-escaped newlines in private key
@@ -83,7 +84,54 @@ export default class FirebaseService {
       throw error;
     }
   }
-  
+
+  async handleTokenPurchaseCompleted(companyId, tokenAmount) {
+    try {
+        console.log('[Server Stripe] update companyID:', companyId)
+        const companyRef = this.firestore.collection('companies').doc(companyId);
+        const companySnapshot = await companyRef.get();
+
+        if (!companySnapshot.exists) {
+            throw new Error(`[Firebase] Company with ID ${companyId} does not exist`);
+        }
+
+        // Get current date
+        const now = new Date();
+
+        // Format: DD.Month.YYYY_HH:MM
+        const day = now.getDate().toString().padStart(2, '0');
+        const month = now.toLocaleString('en-US', { month: 'long' }); // Full month name
+        const year = now.getFullYear();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+
+        const formattedTimestamp = `${day}.${month}.${year}_${hours}:${minutes}`;
+        const changelogEntry = `purchasedTokens=${tokenAmount}_at:${formattedTimestamp}`;
+
+        // Get existing token count or default to 0
+        const companyData = companySnapshot.data();
+        const currentTokens = Number(companyData.tokens) || 0;
+
+        // Update the tokens and changelog
+        await companyRef.update({
+            tokens: currentTokens + tokenAmount,
+            changelog: admin.firestore.FieldValue.arrayUnion(changelogEntry),
+        });
+
+        console.log(`[Firebase] Tokens updated for company ID ${companyId}. New balance: ${currentTokens + tokenAmount}`);
+        // Send WebSocket notification
+        sendWebSocketMessage(companyId, {
+          type: 'TOKEN_UPDATE',
+          companyId,
+          newTokenBalance: currentTokens + tokenAmount
+        });
+    } catch (error) {
+        console.error('[Firebase] [Error] in handleTokenPurchaseCompleted:', error.message);
+        throw error;
+    }
+  }
+
+
   async getJobPostingsByCompanyId(companyId) {
     try {
       const querySnapshot = await this.firestore
@@ -151,19 +199,52 @@ export default class FirebaseService {
       const url = URLManager.createUrlForJobPosting(jobID, jobPosting.companyId);
       
       const documentToStore = {
+        jobId: jobID,
         jobDescription: jobPosting.jobDescription,
         jobTitle: jobPosting.jobTitle,
         questions: jobPosting.questions,
         companyId: jobPosting.companyId,
-        status: 'inactive',
         interviewURL: url,
+        dateCreated: Date.now(),
       };
       await jobDocRef.set(documentToStore); 
+      sendWebSocketMessage(jobPosting.companyId, { type: 'ADDED_NEW_JOB' });
     } catch (error) {
       console.error("Error storing job posting:", error);
       throw new Error('Failed to add new job posting');
     }
   }
+
+  async deleteJobPosting(companyId, jobId) {
+    try {
+      // Reference the job posting document by jobId
+      const jobDocRef = this.firestore.collection('job_postings').doc(jobId);
+
+      // Retrieve the document to ensure it exists and verify company ownership
+      const doc = await jobDocRef.get();
+      if (!doc.exists) {
+        return { success: false, error: 'Job posting not found' };
+      }
+
+      const jobData = doc.data();
+      // Verify that the job posting belongs to the provided companyId
+      if (jobData.companyId !== companyId) {
+        return { success: false, error: 'Job posting does not belong to the specified company' };
+      }
+
+      // Delete the document
+      await jobDocRef.delete();
+
+      // Optionally, you could send a websocket message or perform additional cleanup here
+      // sendWebSocketMessage(companyId, { type: 'DELETED_JOB' });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting job posting:", error);
+      throw new Error("Failed to delete job posting");
+    }
+  }
+
 
   async getCompanyById(companyId) {
     try {
@@ -176,6 +257,7 @@ export default class FirebaseService {
           id: docSnap.id,
           name: data.name,
           email: data.email,
+          tokens: data.tokens ?? 0,
         };
       } else {
         console.log('No company found with ID:', companyId);
@@ -264,6 +346,13 @@ export default class FirebaseService {
         };
         await docRef.set(updatedData, { merge: true });
 
+        // Update the jobPosting's interviewFinished field
+        const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+        await jobDocRef.set(
+            { interviewFinished: admin.firestore.FieldValue.increment(1) },
+            { merge: true }
+        );
+
         console.log(`✅ Interview analysis stored successfully for interviewID: ${interviewID}`);
         return { success: true };
     } catch (error) {
@@ -278,6 +367,39 @@ export default class FirebaseService {
       return { success: false, error: error.message };
     }
   }
+
+  async incrementInterviewStarted({ companyID, jobID }) {
+    try {
+        if (!companyID || !jobID) {
+            const missingFields = [
+                !companyID && 'companyID',
+                !jobID && 'jobID'
+            ].filter(Boolean);
+            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+
+        const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+
+        // Increment the interviewStarted field or create it if it doesn't exist
+        await jobDocRef.set(
+            { interviewStarted: admin.firestore.FieldValue.increment(1) },
+            { merge: true }
+        );
+
+        console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
+        return { success: true };
+    } catch (error) {
+        console.error(`🔥 Error updating interviewStarted for jobID ${jobID}:`, error);
+        if (error.code === 'permission-denied') {
+            return { success: false, error: 'Permission denied: Unable to update job posting' };
+        }
+        if (error.code === 'resource-exhausted') {
+            return { success: false, error: 'Database quota exceeded. Please try again later' };
+        }
+        return { success: false, error: error.message };
+    }
+}
+
 
   async getInterviewResults(companyID, jobID) {
     try {
@@ -305,24 +427,6 @@ export default class FirebaseService {
     }
   }
 
-  // static async updateCandidate(candidate) {
-  //   const collectionName = `interviews_${companyID}`;
-  //   const docID = interviewID;
-  //   const collectionRef = this.firestore.collection(collectionName);
-  //   const docRef = collectionRef.doc(docID);
-
-  //   const docSnapshot = await docRef.get();
-  //   if (!docSnapshot.exists) {
-  //       throw new Error(`❌ Interview document ${docID} not found in collection ${collectionName}`);
-  //   }
-
-  //   await docRef.set({ candidate }, { merge: true }); // Ensures existing fields are retained
-
-  //   console.log(`✅ Candidate updated successfully for interviewID: ${interviewID}`);
-
-  //   return candidate;
-  // }
-
   async storeCandidatesInJobPosting(companyID, jobID, newCandidates) {
     try {
         if (!companyID || !jobID || !Array.isArray(newCandidates)) {
@@ -347,14 +451,19 @@ export default class FirebaseService {
 
         await jobDocRef.update({ candidates: updatedCandidates });
 
-        console.log(`✅ Candidates successfully added to job posting: ${jobID}`);
+        sendWebSocketMessage(companyID, {
+          type: 'NEW_CANDIDATES',
+          jobID,
+          candidates: updatedCandidates
+        });
+
         return { success: true };
 
     } catch (error) {
         console.error(`🔥 Error storing candidates in job posting ${jobID}:`, error);
         return { success: false, error: error.message };
     }
-}
+  }
 
 
 

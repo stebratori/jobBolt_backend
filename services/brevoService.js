@@ -52,21 +52,27 @@ export default class BrevoService {
                     <p>Best regards,</p>
                     <p>Job Bolt Team</p>
                 `,
-                messageVersions: emails.map((email, index) => ({
-                    to: [{
-                        email: email
-                    }],
-                    subject: 'Your Interview Invite',
-                    htmlContent: `
-                        <p>Hello,</p>
-                        <p>You have been invited for an interview on Job-Bolt.</p>
-                        <p>Please use the following credentials to access your interview:</p>
-                        <p>URL: <a href="${url}">${url}</a></p>
-                        <p><strong>Password:</strong> ${passwords[index]}</p>
-                        <p>Best regards,</p>
-                        <p>Job Bolt Team</p>
-                    `
-                }))
+                messageVersions: emails.map((email, index) => {
+                    // Construct the URL with email and password parameters
+                    const urlWithParams = new URL(url);
+                    urlWithParams.searchParams.append('email', encodeURIComponent(email));
+                    
+                    return {
+                        to: [{
+                            email: email
+                        }],
+                        subject: 'Your Interview Invite',
+                        htmlContent: `
+                            <p>Hello,</p>
+                            <p>You have been invited for an interview on Job-Bolt.</p>
+                            <p>Please use the following credentials to access your interview:</p>
+                            <p>URL: <a href="${urlWithParams.toString()}">${urlWithParams.toString()}</a></p>
+                            <p><strong>Password:</strong> ${passwords[index]}</p>
+                            <p>Best regards,</p>
+                            <p>Job Bolt Team</p>
+                        `
+                    };
+                })
             };
     
             console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));

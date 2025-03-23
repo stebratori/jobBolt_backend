@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors'; 
+import { createServer } from 'http';
+import WebSocketService from './services/webSocketService.js'; 
 
 // Routes
 import chatGptRoutes from './routes/chatGptRoutes.js';
@@ -18,6 +20,17 @@ import bodyParser from "body-parser";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Create an HTTP server for both Express and WebSocket
+const server = createServer(app);
+const webSocketService = new WebSocketService(server);
+
+console.log("🚀 WebSocket server initialized!");
+
+// Expose WebSocket messaging for other modules
+export const sendWebSocketMessage = (companyId, message) => {
+  webSocketService.sendMessage(companyId, message);
+};
+
 app.use(cors({
   origin: ['https://job-bolt.com', 'http://localhost:5555'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
@@ -33,6 +46,7 @@ const heyGenService = new HeyGenService();
 
 // Stripe webhook route - must come before other routes that use express.json()
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  console.log(`Stripe Webhook received`);
   stripe.handleWebhook(req, res);
 });
 
@@ -63,6 +77,7 @@ app.use((req, res, next) => {
 
 // Stripe
 app.post('/create-checkout-session', async (req, res) => {
+  console.log(`Creating checkout session...`);
   try {
     const session = await stripe.createCheckoutSession(req.body);
     res.json({ url: session.url });
@@ -104,7 +119,25 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start the server
-app.listen(PORT, () => {
+app.post('/api/verify-password', (req, res) => {
+  // Extract password from the request body
+  const { password } = req.body;
+  
+  // Retrieve the correct password from environment variables
+  // (Make sure to set process.env.PASSWORD in your .env file)
+  const correctPassword = "JobBolt2025";
+
+  // Compare the provided password with the correct password
+  if (password === correctPassword) {
+    // Password is correct, return true
+    res.json(true);
+  } else {
+    // Password is incorrect, return false
+    res.json(false);
+  }
+});
+
+// Start the HTTP & WebSocket server
+server.listen(PORT, () => {
   console.log(`Ljubav svima <3`);
 });

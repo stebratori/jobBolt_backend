@@ -36,9 +36,9 @@ export default class StripeService {
         }
         case 'checkout.session.completed': {
           const session = event.data.object;
-                console.log('🛍️ Checkout Session Details:', {id: session.id, metadata: session.metadata, customer: session.customer, amount_total: session.amount_total });
-                await this.handleCheckoutSessionCompleted(session)
-                break;
+          console.log('🛍️ Checkout Session Details:', {id: session.id, metadata: session.metadata, customer: session.customer, amount_total: session.amount_total });
+          await this.handleCheckoutSessionCompleted(session)
+          break;
         }
         default:
           console.warn(`[Stripe] Unhandled event type: ${event.type}`);
@@ -70,22 +70,33 @@ export default class StripeService {
   // Custom method to handle attached PaymentMethod
   async handleCheckoutSessionCompleted(session) {
     try {
-      const { companyId, productId, jobId } = session.metadata;
-      if (!companyId || !productId || !jobId) {
-        throw new Error('[Server Stripe] Missing metadata in the session');
-      }
-      const firebaseService = new FirebaseService();
-      await firebaseService.handleCheckoutSessionCompleted(companyId, jobId);
-  
+        const { companyId, productId, tokenAmount } = session.metadata;
+
+        if (!companyId || !productId || !tokenAmount) {
+            throw new Error('[Server Stripe] Missing metadata in the session');
+        }
+
+        // Convert tokenAmount to a number
+        const tokenAmountNumber = Number(tokenAmount);
+
+        if (isNaN(tokenAmountNumber) || tokenAmountNumber <= 0) {
+            throw new Error(`[Server Stripe] Invalid tokenAmount: ${tokenAmount}`);
+        }
+
+        const firebaseService = new FirebaseService();
+        console.log('[Server Stripe] handleTokenPurchaseCompleted...');
+        await firebaseService.handleTokenPurchaseCompleted(companyId, tokenAmountNumber);
+
     } catch (error) {
-      console.error('[Server Stripe]  Error in handleCheckoutSessionCompleted:', error.message);
+        console.error('[Server Stripe] Error in handleCheckoutSessionCompleted:', error.message);
     }
   }
-  
-  async createCheckoutSession(params) {
-    const { companyId, jobId, productId, productPrice, origin } = params;
 
-    if (!companyId || !productId || !productPrice || !origin || !jobId) {
+
+  async createCheckoutSession(params) {
+    const { companyId, productId, productPrice, tokenAmount, origin } = params;
+
+    if (!companyId || !productId || !productPrice || !origin || !tokenAmount ) {
       throw new Error('[Server Stripe] Missing required parameters: companyId, productId, productPrice, and origin are required');
     }
 
@@ -112,14 +123,14 @@ export default class StripeService {
         metadata: {
           companyId, 
           productId,
-          jobId,
+          tokenAmount,
         },
         payment_intent_data: {
           capture_method: 'automatic',
           metadata: {
             companyId,
             productId,
-            jobId,
+            tokenAmount,
           },
         },
         expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Session expires in 30 minutes
