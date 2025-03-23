@@ -28,7 +28,7 @@ class SpeechRecognitionService {
         transcriber = client.realtime.transcriber({
           sampleRate: 16000,
           format: 'pcm',
-          endpointing: 1000, // 1 second of silence for endpoint detection
+          endpointing: 500, // 0.5 second of silence for endpoint detection
         });
         
         // Set up event handlers
