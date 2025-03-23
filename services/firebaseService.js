@@ -264,6 +264,22 @@ export default class FirebaseService {
     }
   }
 
+  async subtractTokenFromCompany(companyID) {
+    try {
+      const companyRef = this.firestore.collection('companies').doc(companyID);
+      await companyRef.set(
+        {
+          tokens: admin.firestore.FieldValue.increment(-1)
+        },
+        { merge: true }
+      );
+      console.log(`🪙 Subtracted 1 token from company ID: ${companyID}`);
+    } catch (error) {
+      console.error(`🔥 Error subtracting token from company ID ${companyID}:`, error);
+      throw error;
+    }
+  }
+
   async addNewCompany(company) {
     try {
       const docRef = this.firestore.collection('companies').doc(company.id);
@@ -402,6 +418,8 @@ async incrementInterviewStarted({ companyID, jobID, email, password }) {
       },
       { merge: true }
     );
+
+    await this.subtractTokenFromCompany(companyID);
 
     console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
     return { success: true };
