@@ -152,7 +152,6 @@ router.delete('/delete-job', async (req, res, next) => {
   }
 });
 
-// In firebaseRoutes.js
 router.post('/check-user-password', async (req, res, next) => {
   const { companyID, jobID, password } = req.body;
 
@@ -162,7 +161,8 @@ router.post('/check-user-password', async (req, res, next) => {
 
   try {
     const isValid = await firebaseService.checkUserPassword(companyID, jobID, password);
-    res.status(200).json({ match: isValid });
+    res.status(200).json(isValid);
+
   } catch (error) {
     console.error("Error in /check-user-password:", error);
     res.status(500).json({ error: 'Internal server error' });
