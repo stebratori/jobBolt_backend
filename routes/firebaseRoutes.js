@@ -115,15 +115,15 @@ router.get('/interview-results', async (req, res, next) => {
 });
 
 router.post('/increment-interview-started', async (req, res, next) => {
-  const { companyID, jobID } = req.body;
+  const { companyID, jobID, email, password } = req.body;
 
   // Validate required fields
-  if (!companyID || !jobID) {
+  if (!companyID || !jobID || !email || !password) {
     return res.status(400).json({ error: 'Missing required fields: companyID and jobID' });
   }
 
   try {
-    const result = await firebaseService.incrementInterviewStarted({ companyID, jobID });
+    const result = await firebaseService.incrementInterviewStarted({ companyID, jobID, email, password });
     res.status(200).json({ message: 'Interview started count updated successfully', result });
   } catch (error) {
     next(error);

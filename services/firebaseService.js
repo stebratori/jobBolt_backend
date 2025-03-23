@@ -363,37 +363,60 @@ export default class FirebaseService {
     }
   }
 
-  async incrementInterviewStarted({ companyID, jobID }) {
-    try {
-        if (!companyID || !jobID) {
-            const missingFields = [
-                !companyID && 'companyID',
-                !jobID && 'jobID'
-            ].filter(Boolean);
-            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-        }
-
-        const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
-
-        // Increment the interviewStarted field or create it if it doesn't exist
-        await jobDocRef.set(
-            { interviewStarted: admin.firestore.FieldValue.increment(1) },
-            { merge: true }
-        );
-
-        console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
-        return { success: true };
-    } catch (error) {
-        console.error(`🔥 Error updating interviewStarted for jobID ${jobID}:`, error);
-        if (error.code === 'permission-denied') {
-            return { success: false, error: 'Permission denied: Unable to update job posting' };
-        }
-        if (error.code === 'resource-exhausted') {
-            return { success: false, error: 'Database quota exceeded. Please try again later' };
-        }
-        return { success: false, error: error.message };
+// In firebaseService.js
+async incrementInterviewStarted({ companyID, jobID, email, password }) {
+  try {
+    if (!companyID || !jobID || !email || !password) {
+      const missingFields = [
+        !companyID && 'companyID',
+        !jobID && 'jobID',
+        !email && 'email',
+        !password && 'password'
+      ].filter(Boolean);
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
+
+    const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+    const jobDoc = await jobDocRef.get();
+
+    if (!jobDoc.exists) {
+      throw new Error(`Job posting with ID ${jobID} does not exist.`);
+    }
+
+    const data = jobDoc.data();
+    const candidates = data.candidates || [];
+
+    // Update candidate with matching email and password
+    const updatedCandidates = candidates.map(candidate => {
+      if (candidate.email === email && candidate.password === password) {
+        return { ...candidate, interviewStarted: true };
+      }
+      return candidate;
+    });
+
+    // Save updates
+    await jobDocRef.set(
+      {
+        interviewStarted: admin.firestore.FieldValue.increment(1),
+        candidates: updatedCandidates
+      },
+      { merge: true }
+    );
+
+    console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`🔥 Error updating interviewStarted for jobID ${jobID}:`, error);
+    if (error.code === 'permission-denied') {
+      return { success: false, error: 'Permission denied: Unable to update job posting' };
+    }
+    if (error.code === 'resource-exhausted') {
+      return { success: false, error: 'Database quota exceeded. Please try again later' };
+    }
+    return { success: false, error: error.message };
+  }
 }
+
 
 
   async getInterviewResults(companyID, jobID) {
