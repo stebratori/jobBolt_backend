@@ -460,6 +460,50 @@ export default class FirebaseService {
     }
   }
 
+  // In firebaseService.js
+async checkUserPassword(companyID, jobID, password) {
+  try {
+    const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+    const jobDoc = await jobDocRef.get();
+
+    if (!jobDoc.exists) {
+      console.warn(`Job posting with ID ${jobID} does not exist.`);
+      return { match: false, reason: 'job_not_found' };
+    }
+
+    const data = jobDoc.data();
+
+    if (data.companyId !== companyID) {
+      console.warn(`Company ID mismatch. Expected: ${companyID}, Found: ${data.companyId}`);
+      return { match: false, reason: 'company_mismatch' };
+    }
+
+    const candidates = data.candidates || [];
+
+    let foundWithMatchButStarted = false;
+    const validMatchFound = candidates.some(candidate => {
+      if (candidate.password === password) {
+        if (candidate.interviewStarted) {
+          foundWithMatchButStarted = true;
+          return false;
+        }
+        return true;
+      }
+      return false;
+    });
+
+    if (validMatchFound) {
+      return { match: true };
+    } else if (foundWithMatchButStarted) {
+      return { match: false, reason: 'interview_already_started' };
+    } else {
+      return { match: false, reason: 'invalid_password' };
+    }
+  } catch (error) {
+    console.error("Error checking user password in FirebaseService:", error);
+    throw error;
+  }
+}
 
 
 }

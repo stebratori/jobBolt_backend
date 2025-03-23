@@ -152,4 +152,21 @@ router.delete('/delete-job', async (req, res, next) => {
   }
 });
 
+// In firebaseRoutes.js
+router.post('/check-user-password', async (req, res, next) => {
+  const { companyID, jobID, password } = req.body;
+
+  if (!companyID || !jobID || !password) {
+    return res.status(400).json({ error: 'Missing required fields: companyID, jobID, or password' });
+  }
+
+  try {
+    const isValid = await firebaseService.checkUserPassword(companyID, jobID, password);
+    res.status(200).json({ match: isValid });
+  } catch (error) {
+    console.error("Error in /check-user-password:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
