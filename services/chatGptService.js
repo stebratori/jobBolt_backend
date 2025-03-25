@@ -18,12 +18,14 @@ export default class ChatGptService {
   }
 
   async sendMessage(conversation) {
+    const start = Date.now(); 
     try {
       const response = await this.api.post('/chat/completions', {
         model: this.model,
         messages: conversation,
       });
-      console.log("Usage object:", JSON.stringify(response.data?.usage, null, 2));
+      const duration = Date.now() - start; // Measure elapsed time
+      console.log(`[ChatGPT] Response time: ${duration}ms`);
 
       const reply = response.data?.choices[0]?.message?.content;
       const completion_tokens = response.data?.usage?.completion_tokens || null;
@@ -34,7 +36,8 @@ export default class ChatGptService {
       }
       return { reply, completion_tokens, prompt_tokens };
     } catch (error) {
-      console.error('Error communicating with ChatGPT API:', error.response?.data || error.message);
+      const duration = Date.now() - start;
+      console.error(`[ChatGPT] Failed after ${duration}ms:`, error.response?.data || error.message);
       throw error;
     }
   }
