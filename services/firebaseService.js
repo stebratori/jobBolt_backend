@@ -551,16 +551,15 @@ async redeemPromoCode(code, companyID) {
     const promoRef = this.firestore.collection('promoCodes').doc(code);
     const promoSnap = await promoRef.get();
 
-    // Check if promo code exists and is active
     if (!promoSnap.exists) {
       console.log(`[PromoCode] Code ${code} does not exist`);
-      return false;
+      return { success: false, message: 'Code does not exist' };
     }
 
     const promoData = promoSnap.data();
     if (promoData.status !== 'active') {
       console.log(`[PromoCode] Code ${code} is inactive`);
-      return false;
+      return { success: false, message: 'Code is inactive' };
     }
 
     const companyRef = this.firestore.collection('companies').doc(companyID);
@@ -568,26 +567,31 @@ async redeemPromoCode(code, companyID) {
 
     if (!companySnap.exists) {
       console.log(`[PromoCode] Company ${companyID} does not exist`);
-      return false;
+      return { success: false, message: 'Company does not exist' };
     }
 
-    // Update promo code to inactive
+    // Mark promo code as used
     await promoRef.update({ status: 'inactive' });
 
-    // Increment tokens by 3
+    // Increment tokens
     await companyRef.set({
       tokens: admin.firestore.FieldValue.increment(3)
     }, { merge: true });
 
-    console.log(`[PromoCode] Code ${code} redeemed for company ${companyID}. Added 3 tokens.`);
+    // Get the updated value
+    const updatedCompanySnap = await companyRef.get();
+    const updatedTokens = updatedCompanySnap.data().tokens;
 
-    return true;
+    console.log(`[PromoCode] Code ${code} redeemed. Company ${companyID} now has ${updatedTokens} tokens.`);
+
+    return { success: true, tokens: updatedTokens };
 
   } catch (error) {
     console.error('[Firebase] Error in redeemPromoCode:', error);
-    return false;
+    return { success: false, message: 'Internal error' };
   }
 }
+
 
 
 
