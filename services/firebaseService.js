@@ -546,6 +546,50 @@ async checkUserPassword(companyID, jobID, password) {
   }
 }
 
+async redeemPromoCode(code, companyID) {
+  try {
+    const promoRef = this.firestore.collection('promoCodes').doc(code);
+    const promoSnap = await promoRef.get();
+
+    // Check if promo code exists and is active
+    if (!promoSnap.exists) {
+      console.log(`[PromoCode] Code ${code} does not exist`);
+      return false;
+    }
+
+    const promoData = promoSnap.data();
+    if (promoData.status !== 'active') {
+      console.log(`[PromoCode] Code ${code} is inactive`);
+      return false;
+    }
+
+    const companyRef = this.firestore.collection('companies').doc(companyID);
+    const companySnap = await companyRef.get();
+
+    if (!companySnap.exists) {
+      console.log(`[PromoCode] Company ${companyID} does not exist`);
+      return false;
+    }
+
+    // Update promo code to inactive
+    await promoRef.update({ status: 'inactive' });
+
+    // Increment tokens by 3
+    await companyRef.set({
+      tokens: admin.firestore.FieldValue.increment(3)
+    }, { merge: true });
+
+    console.log(`[PromoCode] Code ${code} redeemed for company ${companyID}. Added 3 tokens.`);
+
+    return true;
+
+  } catch (error) {
+    console.error('[Firebase] Error in redeemPromoCode:', error);
+    return false;
+  }
+}
+
+
 
 }
 

@@ -169,4 +169,20 @@ router.post('/check-user-password', async (req, res, next) => {
   }
 });
 
+router.post('/promo-code', async (req, res, next) => {
+  const { code, companyID } = req.body;
+
+  if (!code || !companyID) {
+    return res.status(400).json({ success: false, error: 'Missing required fields: code or companyID' });
+  }
+
+  try {
+    const result = await firebaseService.redeemPromoCode(code, companyID);
+    res.status(200).json({ success: result });
+  } catch (error) {
+    console.error("Error in /promo-code route:", error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 export default router;
