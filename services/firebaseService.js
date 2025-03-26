@@ -270,6 +270,22 @@ export default class FirebaseService {
     }
   }
 
+  async subtractTokenFromCompany(companyID) {
+    try {
+      const companyRef = this.firestore.collection('companies').doc(companyID);
+      await companyRef.set(
+        {
+          tokens: admin.firestore.FieldValue.increment(-1)
+        },
+        { merge: true }
+      );
+      console.log(`🪙 Subtracted 1 token from company ID: ${companyID}`);
+    } catch (error) {
+      console.error(`🔥 Error subtracting token from company ID ${companyID}:`, error);
+      throw error;
+    }
+  }
+
   async addNewCompany(company) {
     try {
       const docRef = this.firestore.collection('companies').doc(company.id);
@@ -369,37 +385,62 @@ export default class FirebaseService {
     }
   }
 
-  async incrementInterviewStarted({ companyID, jobID }) {
-    try {
-        if (!companyID || !jobID) {
-            const missingFields = [
-                !companyID && 'companyID',
-                !jobID && 'jobID'
-            ].filter(Boolean);
-            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-        }
-
-        const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
-
-        // Increment the interviewStarted field or create it if it doesn't exist
-        await jobDocRef.set(
-            { interviewStarted: admin.firestore.FieldValue.increment(1) },
-            { merge: true }
-        );
-
-        console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
-        return { success: true };
-    } catch (error) {
-        console.error(`🔥 Error updating interviewStarted for jobID ${jobID}:`, error);
-        if (error.code === 'permission-denied') {
-            return { success: false, error: 'Permission denied: Unable to update job posting' };
-        }
-        if (error.code === 'resource-exhausted') {
-            return { success: false, error: 'Database quota exceeded. Please try again later' };
-        }
-        return { success: false, error: error.message };
+// In firebaseService.js
+async incrementInterviewStarted({ companyID, jobID, email, password }) {
+  try {
+    if (!companyID || !jobID || !email || !password) {
+      const missingFields = [
+        !companyID && 'companyID',
+        !jobID && 'jobID',
+        !email && 'email',
+        !password && 'password'
+      ].filter(Boolean);
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
+
+    const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+    const jobDoc = await jobDocRef.get();
+
+    if (!jobDoc.exists) {
+      throw new Error(`Job posting with ID ${jobID} does not exist.`);
+    }
+
+    const data = jobDoc.data();
+    const candidates = data.candidates || [];
+
+    // Update candidate with matching email and password
+    const updatedCandidates = candidates.map(candidate => {
+      if (candidate.email === email && candidate.password === password) {
+        return { ...candidate, interviewStarted: true };
+      }
+      return candidate;
+    });
+
+    // Save updates
+    await jobDocRef.set(
+      {
+        interviewStarted: admin.firestore.FieldValue.increment(1),
+        candidates: updatedCandidates
+      },
+      { merge: true }
+    );
+
+    await this.subtractTokenFromCompany(companyID);
+
+    console.log(`✅ interviewStarted field updated for jobID: ${jobID}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`🔥 Error updating interviewStarted for jobID ${jobID}:`, error);
+    if (error.code === 'permission-denied') {
+      return { success: false, error: 'Permission denied: Unable to update job posting' };
+    }
+    if (error.code === 'resource-exhausted') {
+      return { success: false, error: 'Database quota exceeded. Please try again later' };
+    }
+    return { success: false, error: error.message };
+  }
 }
+
 
 
   async getInterviewResults(companyID, jobID) {
@@ -465,6 +506,98 @@ export default class FirebaseService {
         return { success: false, error: error.message };
     }
   }
+
+  // In firebaseService.js
+async checkUserPassword(companyID, jobID, password) {
+  try {
+    const jobDocRef = this.firestore.collection('job_postings').doc(jobID);
+    const jobDoc = await jobDocRef.get();
+
+    if (!jobDoc.exists) {
+      console.warn(`Job posting with ID ${jobID} does not exist.`);
+      return { match: false, reason: 'job_not_found' };
+    }
+
+    const data = jobDoc.data();
+
+    if (data.companyId !== companyID) {
+      console.warn(`Company ID mismatch. Expected: ${companyID}, Found: ${data.companyId}`);
+      return { match: false, reason: 'company_mismatch' };
+    }
+
+    const candidates = data.candidates || [];
+
+    let foundWithMatchButStarted = false;
+    const validMatchFound = candidates.some(candidate => {
+      if (candidate.password === password) {
+        if (candidate.interviewStarted) {
+          foundWithMatchButStarted = true;
+          return false;
+        }
+        return true;
+      }
+      return false;
+    });
+
+    if (validMatchFound) {
+      return { match: true };
+    } else if (foundWithMatchButStarted) {
+      return { match: false, reason: 'interview_already_started' };
+    } else {
+      return { match: false, reason: 'invalid_password' };
+    }
+  } catch (error) {
+    console.error("Error checking user password in FirebaseService:", error);
+    throw error;
+  }
+}
+
+async redeemPromoCode(code, companyID) {
+  try {
+    const promoRef = this.firestore.collection('promoCodes').doc(code);
+    const promoSnap = await promoRef.get();
+
+    if (!promoSnap.exists) {
+      console.log(`[PromoCode] Code ${code} does not exist`);
+      return { success: false, message: 'Code does not exist' };
+    }
+
+    const promoData = promoSnap.data();
+    if (promoData.status !== 'active') {
+      console.log(`[PromoCode] Code ${code} is inactive`);
+      return { success: false, message: 'Code is inactive' };
+    }
+
+    const companyRef = this.firestore.collection('companies').doc(companyID);
+    const companySnap = await companyRef.get();
+
+    if (!companySnap.exists) {
+      console.log(`[PromoCode] Company ${companyID} does not exist`);
+      return { success: false, message: 'Company does not exist' };
+    }
+
+    // Mark promo code as used
+    await promoRef.update({ status: 'inactive' });
+
+    // Increment tokens
+    await companyRef.set({
+      tokens: admin.firestore.FieldValue.increment(3)
+    }, { merge: true });
+
+    // Get the updated value
+    const updatedCompanySnap = await companyRef.get();
+    const updatedTokens = updatedCompanySnap.data().tokens;
+
+    console.log(`[PromoCode] Code ${code} redeemed. Company ${companyID} now has ${updatedTokens} tokens.`);
+
+    return { success: true, tokens: updatedTokens };
+
+  } catch (error) {
+    console.error('[Firebase] Error in redeemPromoCode:', error);
+    return { success: false, message: 'Internal error' };
+  }
+}
+
 
 
 

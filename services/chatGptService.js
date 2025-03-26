@@ -17,26 +17,45 @@ export default class ChatGptService {
   }
 
   async sendMessage(conversation) {
-    try {
-      const response = await this.api.post('/chat/completions', {
-        model: this.model,
-        messages: conversation,
-      });
-      console.log("Usage object:", JSON.stringify(response.data?.usage, null, 2));
-
-      const reply = response.data?.choices[0]?.message?.content;
-      const completion_tokens = response.data?.usage?.completion_tokens || null;
-      const prompt_tokens = response.data?.usage?.prompt_tokens || null;
-
-      if (!reply) {
-        throw new Error('Failed to retrieve a valid response from ChatGPT');
+    const MAX_RETRIES = 3;
+    let attempt = 0;
+  
+    while (attempt < MAX_RETRIES) {
+      const start = Date.now();
+      try {
+        attempt++;
+        const response = await this.api.post(
+          '/chat/completions',
+          {
+            model: this.model,
+            messages: conversation,
+          },
+          {
+            timeout: 6000, // Set timeout per request
+          }
+        );
+  
+        const duration = Date.now() - start;
+        console.log(`[ChatGPT] Response time (attempt ${attempt}): ${duration}ms`);
+  
+        const reply = response.data?.choices[0]?.message?.content;
+        const completion_tokens = response.data?.usage?.completion_tokens || null;
+        const prompt_tokens = response.data?.usage?.prompt_tokens || null;
+  
+        if (!reply) throw new Error('Empty response from ChatGPT');
+        return { reply, completion_tokens, prompt_tokens };
+      } catch (error) {
+        const duration = Date.now() - start;
+        const errorMsg = error.code === 'ECONNABORTED' ? 'Request timed out' : error.message;
+        console.warn(`[ChatGPT] Attempt ${attempt} failed after ${duration}ms:`, errorMsg);
+  
+        if (attempt >= MAX_RETRIES) {
+          throw new Error(`ChatGPT failed after ${MAX_RETRIES} attempts: ${errorMsg}`);
+        }
       }
-      return { reply, completion_tokens, prompt_tokens };
-    } catch (error) {
-      console.error('Error communicating with ChatGPT API:', error.response?.data || error.message);
-      throw error;
     }
   }
+  
 
   async generateQuestions(startingPrompt, jobDescription) {
     const questionGenerationPrompt = `${startingPrompt}\n\n${jobDescription}`;

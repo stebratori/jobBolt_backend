@@ -5,13 +5,13 @@ class WebSocketService {
     constructor(server) {
         console.log("🚀 Initializing WebSocket server...");
         this.wss = new WebSocketServer({ server });
-        this.connectedClients = new Map(); // Stores companyId -> WebSocket instance
+        this.connectedClients = new Map();
         this.speechService = new SpeechRecognitionService();
+        this.audioStartTimestamps = new Map(); // Track when audio is received
 
         this.wss.on('connection', (ws, req) => {
             console.log("✅ New WebSocket connection attempt");
 
-            // Setup ping interval to keep connection alive
             const keepAlive = setInterval(() => {
                 if (ws.readyState === ws.OPEN) {
                     ws.send(JSON.stringify({ type: "ping" }));
@@ -42,17 +42,18 @@ class WebSocketService {
             return;
         }
 
-        // Store the client connection
         this.connectedClients.set(companyId, ws);
         console.log(`✅ WebSocket client connected for companyId: ${companyId}`);
 
-        // Set up event handlers
         ws.on('message', async (data) => {
-            // Only process messages if we have a valid connection
             if (ws.readyState === ws.OPEN) {
+                const audioStart = Date.now();
+                this.audioStartTimestamps.set(companyId, audioStart);
+                console.log(`🎧 Audio received for ${companyId} at ${new Date(audioStart).toISOString()}`);
+
                 await this.speechService.handleIncomingAudio(
-                    companyId, 
-                    data, 
+                    companyId,
+                    data,
                     this.broadcastTranscript.bind(this)
                 );
             }
@@ -62,7 +63,7 @@ class WebSocketService {
             console.log(`🔌 WebSocket connection closed for companyId: ${companyId}`);
             this.handleDisconnect(companyId);
         });
-        
+
         ws.on('error', (error) => {
             console.error(`⚠️ WebSocket error for companyId ${companyId}:`, error);
             this.handleDisconnect(companyId);
@@ -71,12 +72,9 @@ class WebSocketService {
 
     handleDisconnect(companyId) {
         if (companyId) {
-            // Clean up the client connection
             this.connectedClients.delete(companyId);
-            
-            // Stop the speech recognition stream
+            this.audioStartTimestamps.delete(companyId);
             this.speechService.stopAssemblyStream(companyId);
-            
             console.log(`❌ WebSocket client disconnected for companyId: ${companyId}`);
         }
     }
@@ -92,10 +90,18 @@ class WebSocketService {
     }
 
     broadcastTranscript(companyId, text) {
+        const audioStart = this.audioStartTimestamps.get(companyId);
+        const now = Date.now();
+        const elapsed = audioStart ? `${now - audioStart}ms` : 'unknown';
+
+        console.log(`📤 Sending transcript to frontend for ${companyId} after ${elapsed}: ${text}`);
+
         const message = {
             type: 'TRANSCRIPT',
             text,
+            durationMs: audioStart ? now - audioStart : null
         };
+
         this.sendMessage(companyId, message);
     }
 }

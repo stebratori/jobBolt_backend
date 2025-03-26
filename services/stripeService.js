@@ -118,7 +118,7 @@ export default class StripeService {
           },
         ],
         mode: 'payment',
-        success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/cancel`,
         metadata: {
           companyId, 

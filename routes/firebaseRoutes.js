@@ -115,15 +115,15 @@ router.get('/interview-results', async (req, res, next) => {
 });
 
 router.post('/increment-interview-started', async (req, res, next) => {
-  const { companyID, jobID } = req.body;
+  const { companyID, jobID, email, password } = req.body;
 
   // Validate required fields
-  if (!companyID || !jobID) {
+  if (!companyID || !jobID || !email || !password) {
     return res.status(400).json({ error: 'Missing required fields: companyID and jobID' });
   }
 
   try {
-    const result = await firebaseService.incrementInterviewStarted({ companyID, jobID });
+    const result = await firebaseService.incrementInterviewStarted({ companyID, jobID, email, password });
     res.status(200).json({ message: 'Interview started count updated successfully', result });
   } catch (error) {
     next(error);
@@ -151,5 +151,44 @@ router.delete('/delete-job', async (req, res, next) => {
       next(error);
   }
 });
+
+router.post('/check-user-password', async (req, res, next) => {
+  const { companyID, jobID, password } = req.body;
+
+  if (!companyID || !jobID || !password) {
+    return res.status(400).json({ error: 'Missing required fields: companyID, jobID, or password' });
+  }
+
+  try {
+    const isValid = await firebaseService.checkUserPassword(companyID, jobID, password);
+    res.status(200).json(isValid);
+
+  } catch (error) {
+    console.error("Error in /check-user-password:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/promo-code', async (req, res) => {
+  const { code, companyID } = req.body;
+
+  if (!code || !companyID) {
+    return res.status(400).json({ success: false, error: 'Missing required fields: code or companyID' });
+  }
+
+  try {
+    const result = await firebaseService.redeemPromoCode(code, companyID);
+
+    if (result.success) {
+      res.status(200).json({ success: true, tokens: result.tokens });
+    } else {
+      res.status(400).json({ success: false, error: result.message });
+    }
+  } catch (error) {
+    console.error("Error in /promo-code route:", error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 
 export default router;
