@@ -1,12 +1,13 @@
 // firebaseRoutes.js
 import express from 'express';
 import FirebaseService from '../services/firebaseService.js';
+import verifyToken from '../utils/verifyToken.js';
 
 const router = express.Router();
 const firebaseService = new FirebaseService();
 
 // Route for getting all Job Posts of a company by companyID
-router.get('/job-postings/:companyId', async (req, res, next) => {
+router.get('/job-postings/:companyId', verifyToken, async (req, res, next) => {
   const { companyId } = req.params;
   try {
     const jobPostings = await firebaseService.getJobPostingsByCompanyId(companyId); 
@@ -32,7 +33,7 @@ router.get('/job-posting/:companyId/:jobId', async (req, res, next) => {
 });
 
 // Route for creating a new Job Post //
-router.post('/job-posting', async (req, res, next) => {
+router.post('/job-posting', verifyToken, async (req, res, next) => {
     const jobPosting = req.body;
     try {
       await firebaseService.addNewJobPosting(jobPosting);
@@ -43,7 +44,7 @@ router.post('/job-posting', async (req, res, next) => {
 });
 
 // Route for getting company details by company ID
-router.get('/company/:companyId', async (req, res, next) => {
+router.get('/company/:companyId', verifyToken, async (req, res, next) => {
     const { companyId } = req.params;
     try {
       const company = await firebaseService.getCompanyById(companyId);
@@ -58,7 +59,7 @@ router.get('/company/:companyId', async (req, res, next) => {
 });
 
 // Route for adding a new company
-router.post('/company', async (req, res, next) => {
+router.post('/company', verifyToken, async (req, res, next) => {
     const company = req.body;
     try {
       await firebaseService.addNewCompany(company);
@@ -98,7 +99,7 @@ router.post('/store-conversation', async (req, res, next) => {
 });
 
 
-router.get('/interview-results', async (req, res, next) => {
+router.get('/interview-results', verifyToken, async (req, res, next) => {
   try {
     const { companyID, jobID } = req.query; 
     if (!companyID || !jobID) {
@@ -131,7 +132,7 @@ router.post('/increment-interview-started', async (req, res, next) => {
 });
 
 // Route for deleting a job posting by CompanyID and JobID
-router.delete('/delete-job', async (req, res, next) => {
+router.delete('/delete-job', verifyToken, async (req, res, next) => {
   const { companyId, jobId } = req.body;
 
   // Validate required fields
