@@ -54,7 +54,7 @@ class WebSocketService {
                 await this.speechService.handleIncomingAudio(
                     companyId,
                     data,
-                    this.broadcastTranscript.bind(this)
+                    (companyId, text, isFinal) => this.broadcastTranscript(companyId, text, isFinal)
                 );
             }
         });
@@ -89,7 +89,7 @@ class WebSocketService {
         }
     }
 
-    broadcastTranscript(companyId, text) {
+    broadcastTranscript(companyId, text, isFinal = false) {
         const audioStart = this.audioStartTimestamps.get(companyId);
         const now = Date.now();
         const elapsed = audioStart ? `${now - audioStart}ms` : 'unknown';
@@ -99,6 +99,7 @@ class WebSocketService {
         const message = {
             type: 'TRANSCRIPT',
             text,
+            is_final: isFinal,
             durationMs: audioStart ? now - audioStart : null
         };
 
