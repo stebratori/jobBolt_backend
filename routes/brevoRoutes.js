@@ -1,12 +1,13 @@
 import express from 'express';
 import BrevoService from '../services/brevoService.js';
 import UserService from '../services/userService.js';
+import {verifyToken} from "@clerk/express";
 
 const router = express.Router();
 const brevoService = new BrevoService();
 
 // Route to send bulk emails
-router.post('/send-emails', async (req, res, next) => {
+router.post('/send-emails',verifyToken, async (req, res, next) => {
   try {
     const { emails, companyID, jobID, } = req.body;
     // Validate required fields first

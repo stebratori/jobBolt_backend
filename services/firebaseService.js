@@ -32,7 +32,8 @@ export default class FirebaseService {
       //}
 
 
-    this.firestore = admin.firestore();
+      this.admin = admin;
+      this.firestore = admin.firestore();
   }
 
   /**

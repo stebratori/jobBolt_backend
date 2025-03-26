@@ -2,8 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors'; 
 import { createServer } from 'http';
-import WebSocketService from './services/webSocketService.js'; 
-
+import WebSocketService from './services/webSocketService.js';
+import session from "express-session";
 // Routes
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
@@ -16,7 +16,8 @@ import StripeService from './services/stripeService.js';
 import HeyGenService from './services/heyGenService.js';
 import FirebaseService from './services/firebaseService.js';
 import bodyParser from "body-parser";
-
+import dotenv from "dotenv";
+dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -37,6 +38,16 @@ app.use(cors({
   credentials: true // Allow cookies and credentials
 }));
 app.use(bodyParser.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET, // Change this to a strong secret
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true, // Prevent XSS attacks
+    secure: false, // Set to true if using HTTPS
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  },
+}))
 
 // Stripe webhook setup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
