@@ -193,52 +193,43 @@ export default class ChatGptService {
     console.log("🚀 [ChatGptService] Starting chunked interview analysis...");
   
     try {
+      if (!Array.isArray(questionAnswerPairs) || questionAnswerPairs.length === 0) {
+        throw new Error('❌ No valid question-answer pairs provided.');
+      }
   
       const baseMessages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Job Description:\n${jobDescription}` },
       ];
   
-      const chunks = [];
-      const chunkSize = questionAnswerPairs.length; // Process all in one chunk
-      for (let i = 0; i < questionAnswerPairs.length; i += chunkSize) {
-        const slice = questionAnswerPairs.slice(i, i + chunkSize).map((pair, index) => ({
+      // Add all Q&A pairs into one chunk since we're no longer chunking by token size
+      const qaMessages = questionAnswerPairs.map((pair, index) => ({
+        role: 'user',
+        content: `Question ${index + 1}: ${pair.question}\nAnswer: ${pair.answer}`,
+      }));
+  
+      const messages = [
+        ...baseMessages,
+        ...qaMessages,
+        {
           role: 'user',
-          content: `Question ${i + index + 1}: ${pair.question}\nAnswer: ${pair.answer}`,
-        }));
-        chunks.push(slice);
+          content: `Now please analyze the entire interview and return your response using the specified JSON format.`,
+        }
+      ];
+  
+      // Send to ChatGPT
+      const response = await this.api.post('/chat/completions', {
+        model: this.model,
+        messages: messages,
+      });
+  
+      const assistantReply = response.data?.choices?.[0]?.message?.content;
+  
+      if (!assistantReply) {
+        throw new Error('❌ No reply from ChatGPT');
       }
   
-      let allMessages = [...baseMessages];
-      let assistantReply = null;
-  
-      for (let i = 0; i < chunks.length; i++) {
-        const isLastChunk = i === chunks.length - 1;
-        allMessages = allMessages.concat(chunks[i]);
-  
-        if (isLastChunk) {
-          allMessages.push({
-            role: 'user',
-            content: `Now please analyze the entire interview and return your response using the specified JSON format.`,
-          });
-        }
-  
-        const response = await this.api.post('/chat/completions', {
-          model: this.model,
-          messages: allMessages,
-        });
-  
-        assistantReply = response.data?.choices?.[0]?.message?.content;
-  
-        if (!assistantReply) throw new Error('No reply from ChatGPT');
-  
-        console.log(`✅ Chunk ${i + 1}/${chunks.length} processed.`);
-  
-        if (!isLastChunk) {
-          allMessages.push({ role: 'assistant', content: assistantReply });
-        }
-      }
-  
+      console.log("✅ Interview analysis received.");
       return { reply: assistantReply };
   
     } catch (error) {
@@ -246,6 +237,7 @@ export default class ChatGptService {
       throw error;
     }
   }
+  
   
 
 
