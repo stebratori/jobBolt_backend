@@ -192,51 +192,72 @@ export default class ChatGptService {
   async analyzeInterviewInChunks(jobDescription, questionAnswerPairs, systemPrompt) {
     console.log("🚀 [ChatGptService] Starting chunked interview analysis...");
   
-    try {
-      if (!Array.isArray(questionAnswerPairs) || questionAnswerPairs.length === 0) {
-        throw new Error('❌ No valid question-answer pairs provided.');
-      }
+    const MAX_RETRIES = 3;
+    let attempt = 0;
   
-      const baseMessages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Job Description:\n${jobDescription}` },
-      ];
+    if (!Array.isArray(questionAnswerPairs) || questionAnswerPairs.length === 0) {
+      throw new Error('❌ No valid question-answer pairs provided.');
+    }
   
-      // Add all Q&A pairs into one chunk since we're no longer chunking by token size
-      const qaMessages = questionAnswerPairs.map((pair, index) => ({
+    const baseMessages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Job Description:\n${jobDescription}` },
+    ];
+  
+    const qaMessages = questionAnswerPairs.map((pair, index) => ({
+      role: 'user',
+      content: `Question ${index + 1}: ${pair.question}\nAnswer: ${pair.answer}`,
+    }));
+  
+    const messages = [
+      ...baseMessages,
+      ...qaMessages,
+      {
         role: 'user',
-        content: `Question ${index + 1}: ${pair.question}\nAnswer: ${pair.answer}`,
-      }));
-  
-      const messages = [
-        ...baseMessages,
-        ...qaMessages,
-        {
-          role: 'user',
-          content: `Now please analyze the entire interview and return your response using the specified JSON format.`,
-        }
-      ];
-  
-      // Send to ChatGPT
-      const response = await this.api.post('/chat/completions', {
-        model: this.model,
-        messages: messages,
-      });
-  
-      const assistantReply = response.data?.choices?.[0]?.message?.content;
-  
-      if (!assistantReply) {
-        throw new Error('❌ No reply from ChatGPT');
+        content: `Now please analyze the entire interview and return your response using the specified JSON format.`,
       }
+    ];
   
-      console.log("✅ Interview analysis received.");
-      return { reply: assistantReply };
+    while (attempt < MAX_RETRIES) {
+      const start = Date.now();
+      try {
+        attempt++;
+        const response = await this.api.post(
+          '/chat/completions',
+          {
+            model: this.model,
+            messages,
+          },
+          {
+            timeout: 10000, // ⏱️ 10 second timeout
+          }
+        );
   
-    } catch (error) {
-      console.error("❌ [ChatGptService] Chunked analysis failed:", error.message);
-      throw error;
+        const duration = Date.now() - start;
+        console.log(`[ChatGPT] Interview analysis response time (attempt ${attempt}): ${duration}ms`);
+  
+        const assistantReply = response.data?.choices?.[0]?.message?.content;
+  
+        if (!assistantReply) {
+          throw new Error('❌ No reply from ChatGPT');
+        }
+  
+        console.log("✅ Interview analysis received.");
+        return { reply: assistantReply };
+  
+      } catch (error) {
+        const duration = Date.now() - start;
+        const errorMsg = error.code === 'ECONNABORTED' ? 'Request timed out' : error.message;
+        console.warn(`[ChatGPT] Attempt ${attempt} failed after ${duration}ms:`, errorMsg);
+  
+        if (attempt >= MAX_RETRIES) {
+          console.error("❌ [ChatGptService] Chunked analysis failed:", errorMsg);
+          throw new Error(`ChatGPT failed after ${MAX_RETRIES} attempts: ${errorMsg}`);
+        }
+      }
     }
   }
+  
   
   
 
