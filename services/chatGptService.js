@@ -5,7 +5,7 @@ dotenv.config();
 
 export default class ChatGptService {
   constructor() {
-    this.model = 'gpt-4-turbo';
+    this.model = 'gpt-4-o1';
     
     // Configure axios instance with base URL and headers
     this.api = axios.create({
