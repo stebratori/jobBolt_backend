@@ -8,16 +8,15 @@ export default class InterviewAnalysisService {
     async analyzeTheInterview(jobDescription, conversations) {
         try {
           console.log("📝 [InterviewAnalysisService] Starting analysis...");
-          const interviewAnalysisPrompt = PromptService.analysisPrompt(jobDescription, conversations);
+          const interviewAnalysisPrompt = PromptService.getDefaultAnalysisPrompt();
     
           // Log the size of the prompt, not the entire prompt if it's huge
           console.log("📝 Prompt length (chars):", interviewAnalysisPrompt.length);
           
-          // (Optional) Log the first 200 characters, but not everything
-          console.log("🔍 Prompt excerpt:", interviewAnalysisPrompt.slice(0, 200), "...");
     
           // Call ChatGPT
-          const { reply } = await chatGptService.analyzeTheInterview(interviewAnalysisPrompt);
+          //const { reply } = await chatGptService.analyzeTheInterview(interviewAnalysisPrompt);
+          const { reply } = await chatGptService.analyzeInterviewInChunks(jobDescription, conversations, interviewAnalysisPrompt);
     
           console.log("📝 Raw reply from ChatGPT:\n", reply);
     

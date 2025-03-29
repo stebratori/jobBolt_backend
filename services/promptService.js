@@ -31,6 +31,10 @@ class PromptService {
     return this.cachedPrompts.analysisPrompt+jobDescription+formattedConversation
   }
 
+  static getDefaultAnalysisPrompt() {
+    return this.cachedPrompts.analysisPrompt;
+  }
+
   /** Default System Prompt (fallback if Firebase is unavailable) */
 static defaultSystemPrompt() {
     return `You are an experienced and professional recruiter conducting a first-round interview for a candidate applying for the role described in job description at the end of this prompt. 
@@ -117,6 +121,12 @@ static defaultAnalysisPrompt() {
         }
         }
     }
+        - Provide a more comprehensive evaluation (about two or three times the length of the shorter examples).
+        - Begin with a concise summary of the candidate's overall performance, referencing key strengths and weaknesses.
+        - Then transition into a more narrative, well-structured paragraph (or paragraphs) that discusses the candidate's performance on specific questions or topic areas. If relevant, mention how they handled follow-up questions, demonstrated (or lacked) real-world examples.
+        - Weave in references to strengths and weaknesses wherever relevant, giving enough context so that anyone reading this section alone could grasp the candidate's knowledge level, depth of experience, and readiness for the role.
+        - Keep the tone professional but allow for a natural, descriptive style that thoroughly covers the candidate's capabilities without becoming too granular.
+
 
     **Grading Guidelines:**
     - **0%**: If the response lacks relevant knowledge, is dismissive, or the user admits they do not know the answer.
@@ -127,6 +137,8 @@ static defaultAnalysisPrompt() {
     Ensure that the grading fairly assesses the candidate's responses while allowing some flexibility for minor errors. The final JSON response must match the structure above exactly.
     Below is the Job Description and the conversation transcript:`;
     }
+
+    
 }
 
 export default PromptService;

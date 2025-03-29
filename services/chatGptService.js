@@ -149,33 +149,104 @@ export default class ChatGptService {
         console.error('Error regenerating interview question:', error.response?.data || error.message);
         throw error;
     }
-}
-
-
-async analyzeTheInterview(interviewAnalysisPrompt) {
-  console.log("🚀 [ChatGptService] Sending request to OpenAI...");
-  try {
-    const message = { role: 'system', content: interviewAnalysisPrompt };
-    const response = await this.api.post('/chat/completions', {
-      model: this.model,
-      messages: [message],
-    });
-
-    console.log("✅ [ChatGptService] OpenAI response data:", response.data);
-
-    const reply = response.data?.choices?.[0]?.message?.content;
-    if (!reply) {
-      throw new Error('No valid reply received from ChatGPT');
-    }
-
-    return { reply };
-  } catch (error) {
-    console.error("❌ [ChatGptService] Error communicating with OpenAI:", error.message);
-    console.error("🔍 Full error object:", error);
-    // Rethrow so the calling method can handle it
-    throw error;
   }
-}
+
+
+  async analyzeTheInterview(jobDescription, questionAnswerPairs) {
+    console.log("🚀 [ChatGptService] Sending interview analysis to OpenAI...");
+
+    try {
+      const systemPrompt = PromptService.getInterviewAnalysisSystemPrompt();
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Job Description:\n${jobDescription}` },
+        ...questionAnswerPairs.map((pair, index) => ({
+          role: 'user',
+          content: `Question ${index + 1}: ${pair.question}\nAnswer: ${pair.answer}`,
+        })),
+        {
+          role: 'user',
+          content: `Now please analyze the entire interview and return your response using the specified JSON format.`,
+        },
+      ];
+
+      const response = await this.api.post('/chat/completions', {
+        model: this.model,
+        messages,
+      });
+
+      console.log("✅ [ChatGptService] OpenAI response data:", response.data);
+
+      const reply = response.data?.choices?.[0]?.message?.content;
+      if (!reply) throw new Error('No reply from ChatGPT');
+
+      return { reply };
+
+    } catch (error) {
+      console.error("❌ [ChatGptService] Error:", error.message);
+      throw error;
+    }
+  }
+
+  async analyzeInterviewInChunks(jobDescription, questionAnswerPairs, systemPrompt) {
+    console.log("🚀 [ChatGptService] Starting chunked interview analysis...");
+  
+    try {
+  
+      const baseMessages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Job Description:\n${jobDescription}` },
+      ];
+  
+      const chunks = [];
+      const chunkSize = questionAnswerPairs.length; // Process all in one chunk
+      for (let i = 0; i < questionAnswerPairs.length; i += chunkSize) {
+        const slice = questionAnswerPairs.slice(i, i + chunkSize).map((pair, index) => ({
+          role: 'user',
+          content: `Question ${i + index + 1}: ${pair.question}\nAnswer: ${pair.answer}`,
+        }));
+        chunks.push(slice);
+      }
+  
+      let allMessages = [...baseMessages];
+      let assistantReply = null;
+  
+      for (let i = 0; i < chunks.length; i++) {
+        const isLastChunk = i === chunks.length - 1;
+        allMessages = allMessages.concat(chunks[i]);
+  
+        if (isLastChunk) {
+          allMessages.push({
+            role: 'user',
+            content: `Now please analyze the entire interview and return your response using the specified JSON format.`,
+          });
+        }
+  
+        const response = await this.api.post('/chat/completions', {
+          model: this.model,
+          messages: allMessages,
+        });
+  
+        assistantReply = response.data?.choices?.[0]?.message?.content;
+  
+        if (!assistantReply) throw new Error('No reply from ChatGPT');
+  
+        console.log(`✅ Chunk ${i + 1}/${chunks.length} processed.`);
+  
+        if (!isLastChunk) {
+          allMessages.push({ role: 'assistant', content: assistantReply });
+        }
+      }
+  
+      return { reply: assistantReply };
+  
+    } catch (error) {
+      console.error("❌ [ChatGptService] Chunked analysis failed:", error.message);
+      throw error;
+    }
+  }
+  
 
 
 
