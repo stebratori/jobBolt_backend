@@ -259,7 +259,7 @@ export default class ChatGptService {
             messages,
           },
           {
-            timeout: 45000, // ⏱️ 45 second timeout
+            timeout: 90000, // ⏱️ 90 second timeout
           }
         );
     
