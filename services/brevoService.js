@@ -28,7 +28,7 @@ export default class BrevoService {
           }
       
           if (!passwords || !Array.isArray(passwords)) {
-            throw new Error('Passwords must be a valid array');
+            throw new Error('Passwords must be a valid array or else!');
           }
       
           if (!url) {
