@@ -38,42 +38,60 @@ router.post('/analyze-and-store-interview', async (req, res) => {
       return res.status(400).json({ error: "Missing companyID, jobID, interviewID, jobDescription, or conversation." });
     }
 
-    console.log("🧪 Starting interview analysis with GPT...");
+    // 3. Send an immediate acknowledgment to the client
+    // This prevents the request from timing out on Heroku (30s limit)
+    res.status(200).json({ success: true, message: "Analysis request received" });
 
-    // 3. Analyze
-    const analysisResult = await interviewAnalysisService.analyzeTheInterview(jobDescription, conversation);
+    // 4. Continue processing after the response has been sent
+    // This is a "fire and forget" approach
+    (async () => {
+      try {
+        console.log("🧪 Starting interview analysis with GPT in background...");
 
-    // 4. Log result from analysis
-    if (!analysisResult.success) {
-      console.error("❌ Interview analysis failed:", analysisResult.error);
-      return res.status(500).json({ success: false, error: analysisResult.error });
-    }
+        // Analyze
+        const analysisResult = await interviewAnalysisService.analyzeTheInterview(
+          jobDescription, conversation
+        );
 
-    console.log("✅ Analysis successful! Storing in Firebase...");
+        if (!analysisResult.success) {
+          console.error("❌ Interview analysis failed:", analysisResult.error);
+          return; // End background processing
+        }
 
-    // 5. Store in DB
-    const storeResult = await firebaseService.storeInterviewAnalysis({
-      companyID,
-      jobID,
-      interviewID,
-      interviewAnalysis: analysisResult.interviewFeedback,
-      duration
+        console.log("✅ Analysis successful! Storing in Firebase...");
+
+        // Store in DB
+        const storeResult = await firebaseService.storeInterviewAnalysis({
+          companyID,
+          jobID,
+          interviewID,
+          interviewAnalysis: analysisResult.interviewFeedback,
+          duration
+        });
+
+        if (!storeResult.success) {
+          console.error("❌ Failed to store analysis in Firebase:", storeResult.error);
+          return; // End background processing
+        }
+
+        console.log("✅ Successfully analyzed and stored the interview", interviewID);
+      } catch (error) {
+        console.error("🔥 Background processing error:", error);
+        console.error("🔥 Stack trace:", error.stack);
+      }
+    })().catch(err => {
+      console.error("🔥 Failed to start background processing:", err);
     });
-
-    // 6. Log DB write result
-    if (!storeResult.success) {
-      console.error("❌ Failed to store analysis in Firebase:", storeResult.error);
-      return res.status(500).json({ success: false, error: storeResult.error });
-    }
-
-    console.log("✅ Successfully analyzed and stored the interview", interviewID);
-    return res.status(200).json({ success: true });
   } 
   catch (error) {
-    // 7. Make sure to log the **full** error
-    console.error("🔥 Error analyzing and storing interview:", error);
+    // Only errors in the request validation phase will be caught here
+    console.error("🔥 Error processing interview request:", error);
     console.error("🔥 Stack trace:", error.stack);
-    return res.status(500).json({ success: false, error: error.message });
+    
+    // Only send an error response if we haven't sent a response already
+    if (!res.headersSent) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
   }
 });
 
