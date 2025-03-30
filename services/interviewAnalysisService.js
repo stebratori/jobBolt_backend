@@ -35,8 +35,7 @@ export default class InterviewAnalysisService {
       const parsedResponse = JSON.parse(cleanResponse);
 
       if (
-        parsedResponse?.interview_feedback?.questions &&
-        Array.isArray(parsedResponse.interview_feedback.questions) &&
+        parsedResponse?.interview_feedback &&
         typeof parsedResponse.interview_feedback.overall_rating === "number" &&
         typeof parsedResponse.interview_feedback.pass_to_next_stage === "boolean" &&
         typeof parsedResponse.interview_feedback.final_feedback === "string"
@@ -44,7 +43,7 @@ export default class InterviewAnalysisService {
         console.log("✅ [InterviewAnalysisService] Valid interview_feedback received");
         return { success: true, interviewFeedback: parsedResponse.interview_feedback };
       } else {
-        throw new Error("Unexpected response format.");
+        throw new Error("Response validation failed: Missing required fields in interview_feedback");
       }
     } catch (error) {
       console.error("❌ [InterviewAnalysisService] Failed to parse response as JSON:", error);
