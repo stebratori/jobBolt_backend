@@ -8,7 +8,7 @@ const brevoService = new BrevoService();
 // Route to send bulk emails
 router.post('/send-emails', async (req, res, next) => {
   try {
-    const { emails, companyID, jobID, } = req.body;
+    const { emails, companyID, jobID, companyName, roleName } = req.body;
     // Validate required fields first
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return res.status(400).json({ error: 'Emails must be a non-empty array.' });
@@ -24,7 +24,7 @@ router.post('/send-emails', async (req, res, next) => {
 
     const { emailsArray, passwordsArray } = await UserService.generateUsersAndPasswordsForEmails(emails, companyID, jobID,);
 
-    const response = await brevoService.sendBulkEmailsWithPasswords(emailsArray, passwordsArray, url);
+    const response = await brevoService.sendBulkEmailsWithPasswords(emailsArray, passwordsArray, url, companyName, roleName);
     
     res.status(200).json({ message: 'Emails sent successfully!', response });
   } catch (error) {
