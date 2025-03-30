@@ -96,32 +96,12 @@ static defaultAnalysisPrompt() {
     Return your response in **pure JSON format only**, using the exact structure below (no additional formatting, code block delimiters, or markdown elements):
     {
         "interview_feedback": {
-        "questions": [
-            {
-            "question": "<string - the exact question asked>",
-            "user_answer": "<string - the user's full answer>",
-            "rating": <integer - a rating between 0 and 100>,
-            "analysis": "<string - a short analysis of the answer>"
-            }
-        ],
         "overall_rating": <integer - overall rating for the interview between 0 and 100>,
         "pass_to_next_stage": <boolean - true if the candidate should proceed to the next interview stage (above 60 overall rating), false otherwise>,
-        "final_feedback": "<string - overall summary of the candidate's performance>",
-        "strengths": ["<string - key strengths demonstrated by the candidate>"],
-        "improvement_areas": ["<string - areas where the candidate needs to improve>"],
-        "communication_skills_rating": number, // Score (0-10) for verbal and non-verbal communication
-        "technical_skills_rating": number, // Score (0-10) for job-specific knowledge and skills
-        "problem_solving_skills_rating": number, // Score (0-10) for problem-solving ability
-        "confidence_rating": number, // Score (0-10) for the candidate's confidence level
-        "engagement_level": string, // e.g., "Highly Engaged", "Moderately Engaged", "Disengaged"
-        "nervousness_level": string, // e.g., "Calm", "Slightly Nervous", "Very Nervous" - you will only have the transcipt here to judge, you will lack the experience of listening to user's voice and watching his gesticulation, so try to be as objective as possible
-        "recommendations": {
-            "suggested_training_materials": ["<string - recommended courses, books, or resources>"],
-            "next_steps": ["<string - recommended actions for the candidate>"]
-        }
+        "final_feedback": "<string - overall summary of the candidate's performance>"
         }
     }
-        - Provide a more comprehensive evaluation (about two or three times the length of the shorter examples).
+        
         - Begin with a concise summary of the candidate's overall performance, referencing key strengths and weaknesses.
         - Then transition into a more narrative, well-structured paragraph (or paragraphs) that discusses the candidate's performance on specific questions or topic areas. If relevant, mention how they handled follow-up questions, demonstrated (or lacked) real-world examples.
         - Weave in references to strengths and weaknesses wherever relevant, giving enough context so that anyone reading this section alone could grasp the candidate's knowledge level, depth of experience, and readiness for the role.
