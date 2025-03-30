@@ -58,10 +58,12 @@ export default class BrevoService {
                 htmlContent: `
                   <p>Hello,</p>
       
-                  <p><strong>${companyName}</strong> has invited you to complete an interview for <strong>${roleName}</strong>. Below, you’ll find your unique interview link.</p>
+                  <p><strong>${companyName}</strong> has invited you to complete an interview for <strong>${roleName}</strong>. Below, you'll find your unique interview link.</p>
       
                   <p><strong>Your Interview Link:</strong><br>
                   <a href="${urlWithParams.toString()}">${urlWithParams.toString()}</a></p>
+
+                  <p><strong>Password:</strong> ${passwords[index]}</p>
       
                   <p>This interview will be conducted by an AI Interviewer, designed to function just like a live interviewer. Please treat this interview professionally and engage naturally, just as you would in any other job interview.</p>
       
@@ -76,7 +78,6 @@ export default class BrevoService {
                   2. Enter your name and the password included in this email.<br>
                   3. You will need to review and accept the Terms & Conditions and Privacy Policy.</p>
       
-                  <p><strong>Password:</strong> ${passwords[index]}</p>
       
                   <p><strong>Need Help?</strong><br>
                   If you experience any issues within the first few minutes of your interview, please stop the interview and email 
