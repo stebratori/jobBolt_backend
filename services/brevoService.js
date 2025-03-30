@@ -57,34 +57,34 @@ export default class BrevoService {
                 subject,
                 htmlContent: `
                   <p>Hello,</p>
-      
+                  <br>
                   <p><strong>${companyName}</strong> has invited you to complete an interview for <strong>${roleName}</strong>. Below, you'll find your unique interview link.</p>
-      
+                  <br>
                   <p><strong>Your Interview Link:</strong><br>
                   <a href="${urlWithParams.toString()}">${urlWithParams.toString()}</a></p>
-
+                  <br>
                   <p><strong>Password:</strong> ${passwords[index]}</p>
-      
+                  <br><br>
                   <p>This interview will be conducted by an AI Interviewer, designed to function just like a live interviewer. Please treat this interview professionally and engage naturally, just as you would in any other job interview.</p>
-      
+                  <br><br>
                   <p><strong>How the Interview Works:</strong><br>
                   - The AI Interviewer can see and hear you, so interact as you would in a face-to-face interview.<br>
                   - After the AI asks a question, your microphone will turn on automatically.<br>
-                  - Once you’ve finished answering, you must click the 'Done Talking' button to submit your response before moving on to the next question.<br>
+                  - Once you've finished answering, you must click the 'Done Talking' button to submit your response before moving on to the next question.<br>
                   - Please make sure you are in a quiet area for your interview.</p>
-      
+                  <br><br>
                   <p><strong>Before You Begin:</strong><br>
                   1. Grant access to your microphone and camera.<br>
                   2. Enter your name and the password included in this email.<br>
                   3. You will need to review and accept the Terms & Conditions and Privacy Policy.</p>
-      
-      
+                  <br>
+                  <br>
                   <p><strong>Need Help?</strong><br>
                   If you experience any issues within the first few minutes of your interview, please stop the interview and email 
                   <a href="mailto:hello@jobbolt.com">hello@jobbolt.com</a> with your full name and the interview link provided above. Please also describe the problem.</p>
-      
+                  <br>
                   <p>When you're ready, click your interview link to get started. Good luck!</p>
-      
+                  <br>
                   <p>Best,<br>
                   The Job-Bolt Team</p>
                 `
