@@ -66,18 +66,23 @@ export default class BrevoService {
                   <p><strong>Password:</strong> ${passwords[index]}</p>
                   <br><br>
                   <p>This interview will be conducted by an AI Interviewer, designed to function just like a live interviewer. Please treat this interview professionally and engage naturally, just as you would in any other job interview.</p>
-                  <br><br>
+                  <br>
                   <p><strong>How the Interview Works:</strong><br>
                   - The AI Interviewer can see and hear you, so interact as you would in a face-to-face interview.<br>
                   - After the AI asks a question, your microphone will turn on automatically.<br>
                   - Once you've finished answering, you must click the 'Done Talking' button to submit your response before moving on to the next question.<br>
                   - Please make sure you are in a quiet area for your interview.</p>
-                  <br><br>
+                  <br>
                   <p><strong>Before You Begin:</strong><br>
                   1. Grant access to your microphone and camera.<br>
                   2. Enter your name and the password included in this email.<br>
                   3. You will need to review and accept the Terms & Conditions and Privacy Policy.</p>
                   <br>
+                  Important: Device & Browser Requirements
+                  To ensure a smooth experience, please do not use a mobile phone for this interview.
+                  You should use:
+                    •	A laptop running Chrome or Safari
+                    •	Or an iPad Pro using Chrome or Safari
                   <br>
                   <p><strong>Need Help?</strong><br>
                   If you experience any issues within the first few minutes of your interview, please stop the interview and email 
