@@ -95,9 +95,6 @@ static defaultAnalysisPrompt() {
     Have in mind that the user's replies were gathered via speech-to-text, so there could be some grammatical errors or misspelled abbreviations. 
     If an abbreviation appears to be incorrect due to speech recognition, assume that the user intended to say the correct term and do not penalize for such mistakes.
     Based on the job description and the conversation provided above, analyze the interview and generate structured feedback for each question-answer pair.
-    When writing the final_feedback, when you suggest that candidate passed to the next stage, use this phrase: “The candidate's responses suggest a solid understanding of the role's requirements, and it may be beneficial to consider them for the next stage.”
-    When writing the final_feedback, when you suggest that candidate should NOT pass to the next stage, use this phrase: “The candidate’s responses suggest their knowledge on these topics might be limited, so exploring other candidates might be worthwhile.”
-
     Return your response in **pure JSON format only**, using the exact structure below (no additional formatting, code block delimiters, or markdown elements):
     {
         "interview_feedback": {
