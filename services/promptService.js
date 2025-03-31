@@ -95,6 +95,9 @@ static defaultAnalysisPrompt() {
     Have in mind that the user's replies were gathered via speech-to-text, so there could be some grammatical errors or misspelled abbreviations. 
     If an abbreviation appears to be incorrect due to speech recognition, assume that the user intended to say the correct term and do not penalize for such mistakes.
     Based on the job description and the conversation provided above, analyze the interview and generate structured feedback for each question-answer pair.
+    When writing the final_feedback, when you suggest that candidate passed to the next stage, use this phrase: “The candidate's responses suggest a solid understanding of the role's requirements, and it may be beneficial to consider them for the next stage.”
+    When writing the final_feedback, when you suggest that candidate should NOT pass to the next stage, use this phrase: “The candidate’s responses suggest their knowledge on these topics might be limited, so exploring other candidates might be worthwhile.”
+
     Return your response in **pure JSON format only**, using the exact structure below (no additional formatting, code block delimiters, or markdown elements):
     {
         "interview_feedback": {
@@ -113,8 +116,8 @@ static defaultAnalysisPrompt() {
     **Grading Guidelines:**
     - **0%**: If the response lacks relevant knowledge, is dismissive, or the user admits they do not know the answer.
     - **10-30%**: If the response is vague, incomplete, or only partially relevant.
-    - **40-60%**: If the answer demonstrates some knowledge but has gaps.
-    - **Above 60%**: If the response fully answers the question with depth and clarity.
+    - **40-69%**: If the answer demonstrates some knowledge but has gaps.
+    - **Above 70%**: If the response fully answers the question with depth and clarity.
 
     Ensure that the grading fairly assesses the candidate's responses while allowing some flexibility for minor errors. The final JSON response must match the structure above exactly.
     Below is the Job Description and the conversation transcript:`;
