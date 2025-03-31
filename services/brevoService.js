@@ -68,7 +68,7 @@ export default class BrevoService {
                   <p>This interview will be conducted by an AI Interviewer, designed to function just like a live interviewer. Please treat this interview professionally and engage naturally, just as you would in any other job interview.</p>
                   <br>
                   <p><strong>How the Interview Works:</strong><br>
-                  - The AI Interviewer can see and hear you, so interact as you would in a face-to-face interview.<br>
+                  - The AI Interviewer will use your camera and microphone to simulate a real-time conversation.<br>
                   - After the AI asks a question, your microphone will turn on automatically.<br>
                   - Once you've finished answering, you must click the 'Done Talking' button to submit your response before moving on to the next question.<br>
                   - Please make sure you are in a quiet area for your interview.</p>
@@ -86,7 +86,7 @@ export default class BrevoService {
                   <br>
                   <p><strong>Need Help?</strong><br>
                   If you experience any issues within the first few minutes of your interview, please stop the interview and email 
-                  <a href="mailto:hello@jobbolt.com">hello@jobbolt.com</a> with your full name and the interview link provided above. Please also describe the problem.</p>
+                  <a href="mailto:hello@job-bolt.com">hello@job-bolt.com</a> with your full name and the interview link provided above. Please also describe the problem.</p>
                   <br>
                   <p>When you're ready, click your interview link to get started. Good luck!</p>
                   <br>
