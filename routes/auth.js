@@ -13,12 +13,21 @@ router.post("/login", async (req, res, next) => {
         const user = await firebaseService.login(email, password);
         req.session.jwt = user.accessToken;
         req.session.refresh_token = user.refreshToken;
-        return res.status(201).json(user)
+        const userToSend = {uid: user.uid, email: user.email};
+        return res.status(201).json(userToSend)
     } catch (e) {
         console.log(e);
-        res.status(e.code).json({error: e.message});
+        res.status(400).json({error: e.message});
     }
 })
+
+router.get('/check-session', (req, res) => {
+    console.log("SID from cookie:", req.cookies['connect.sid']); // ✅ Loguj SID iz kolačića
+    console.log("Session ID:", req.sessionID);
+    console.log("Session data:", req.session);
+    res.json({sessionID: req.sessionID, sessionData: req.session});
+});
+
 
 router.post("/register", async (req, res, next) => {
     try {
@@ -29,12 +38,12 @@ router.post("/register", async (req, res, next) => {
         return res.status(201).json(user)
     } catch (e) {
         e.logger.error(e);
-        res.status(e.code).json({error: e.message});
+        res.status(400).json({error: e.message});
     }
 })
 
 router.post("/logout", async (req, res, next) => {
-    
+
 })
 
 export default router;

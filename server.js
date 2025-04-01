@@ -4,6 +4,7 @@ import cors from 'cors';
 import { createServer } from 'http';
 import WebSocketService from './services/webSocketService.js';
 import session from "express-session";
+import cookieParser from "cookie-parser";
 // Routes
 import chatGptRoutes from './routes/chatGptRoutes.js';
 import brevoRoutes from './routes/brevoRoutes.js';
@@ -37,18 +38,20 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
   credentials: true // Allow cookies and credentials
 }));
+app.use(cookieParser());
 app.use(bodyParser.json());
+
 app.use(session({
-  secret: process.env.SESSION_SECRET, // Change this to a strong secret
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true, // Prevent XSS attacks
-    secure: false, // Set to true if using HTTPS
+    secure: process.env.ENVIRONMENT !== "LOCAL", // Set to true if using HTTPS
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    //sameSite: 'lax',
   },
 }))
-
 // Stripe webhook setup
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeEndpointSecret = process.env.STRIPE_ENDPOINT_SECRET;

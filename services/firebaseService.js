@@ -7,7 +7,7 @@ import { sendWebSocketMessage } from '../server.js';
 export default class FirebaseService {
   constructor() {
      if (!admin.apps.length) {
-    //   if (process.env.ENVIRONMENT = "LOCAL") {
+    //   if (process.env.ENVIRONMENT === "LOCAL") {
     //     admin.initializeApp({
     //       credential: admin.credential.cert(serviceAccounts),
     //     });
