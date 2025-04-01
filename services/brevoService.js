@@ -21,74 +21,98 @@ export default class BrevoService {
      * @param {string} url - Interview link to include in the email.
      * @returns {Promise<Object>} - API response from Brevo.
      */
-    async sendBulkEmailsWithPasswords(emails, passwords, url) {
+    async sendBulkEmailsWithPasswords(emails, passwords, url, companyName, roleName) {
         try {
-            if (!emails || !Array.isArray(emails)) {
-                throw new Error('Emails must be a valid array');
-            }
-    
-            if (!passwords || !Array.isArray(passwords)) {
-                throw new Error('Passwords must be a valid array');
-            }
-    
-            if (!url) {
-                throw new Error('URL is required');
-            }
-    
-            if (emails.length !== passwords.length) {
-                throw new Error('Emails and passwords arrays must have the same length.');
-            }
-    
-            const sendSmtpEmail = {
-                sender: {
-                    email: 'stealth.mvp@gmail.com',
-                    name: 'Job Bolt'
-                },
-                subject: 'Your Interview Invite',
+          if (!emails || !Array.isArray(emails)) {
+            throw new Error('Emails must be a valid array');
+          }
+      
+          if (!passwords || !Array.isArray(passwords)) {
+            throw new Error('Passwords must be a valid array or else!');
+          }
+      
+          if (!url) {
+            throw new Error('URL is required');
+          }
+      
+          if (emails.length !== passwords.length) {
+            throw new Error('Emails and passwords arrays must have the same length.');
+          }
+      
+          const subject = `${companyName} Has Invited You to an Interview!`;
+      
+          const sendSmtpEmail = {
+            sender: {
+              email: 'stealth.mvp@gmail.com',
+              name: 'Job Bolt'
+            },
+            subject,
+            htmlContent: '<p>This is a multi-version email.</p>', // required fallback
+            messageVersions: emails.map((email, index) => {
+              const urlWithParams = new URL(url);
+              urlWithParams.searchParams.append('email', encodeURIComponent(email));
+      
+              return {
+                to: [{ email }],
+                subject,
                 htmlContent: `
-                    <p>Hello,</p>
-                    <p>You have been invited for an interview on Job-Bolt.</p>
-                    <p>Please use the following credentials to access your interview.</p>
-                    <p>Best regards,</p>
-                    <p>Job Bolt Team</p>
-                `,
-                messageVersions: emails.map((email, index) => {
-                    // Construct the URL with email and password parameters
-                    const urlWithParams = new URL(url);
-                    urlWithParams.searchParams.append('email', encodeURIComponent(email));
-                    
-                    return {
-                        to: [{
-                            email: email
-                        }],
-                        subject: 'Your Interview Invite',
-                        htmlContent: `
-                            <p>Hello,</p>
-                            <p>You have been invited for an interview on Job-Bolt.</p>
-                            <p>Please use the following credentials to access your interview:</p>
-                            <p>URL: <a href="${urlWithParams.toString()}">${urlWithParams.toString()}</a></p>
-                            <p><strong>Password:</strong> ${passwords[index]}</p>
-                            <p>Best regards,</p>
-                            <p>Job Bolt Team</p>
-                        `
-                    };
-                })
-            };
-    
-            console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
-    
-            const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-            console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
-    
-            return response;
+                  <p>Hello,</p>
+                  <br>
+                  <p><strong>${companyName}</strong> has invited you to complete an interview for <strong>${roleName}</strong>. Below, you'll find your unique interview link.</p>
+                  <br>
+                  <p><strong>Your Interview Link:</strong><br>
+                  <a href="${urlWithParams.toString()}">${urlWithParams.toString()}</a></p>
+                  <br>
+                  <p><strong>Password:</strong> ${passwords[index]}</p>
+                  <br><br>
+                  <p>This interview will be conducted by an AI Interviewer, designed to function just like a live interviewer. Please treat this interview professionally and engage naturally, just as you would in any other job interview.</p>
+                  <br>
+                  <p><strong>How the Interview Works:</strong><br>
+                  - The AI Interviewer will use your camera and microphone to simulate a real-time conversation.<br>
+                  - After the AI asks a question, your microphone will turn on automatically.<br>
+                  - Once you've finished answering, you must click the 'Done Talking' button to submit your response before moving on to the next question.<br>
+                  - Please make sure you are in a quiet area for your interview.</p>
+                  <br>
+                  <p><strong>Before You Begin:</strong><br>
+                  1. Grant access to your microphone and camera.<br>
+                  2. Enter your name and the password included in this email.<br>
+                  3. You will need to review and accept the Terms & Conditions and Privacy Policy.</p>
+                  <br>
+                  Important: Device & Browser Requirements
+                  To ensure a smooth experience, please do not use a mobile phone for this interview.
+                  You should use:
+                    •	A laptop running Chrome or Safari
+                    •	Or an iPad Pro using Chrome or Safari
+                  <br>
+                  <p><strong>Need Help?</strong><br>
+                  If you experience any issues within the first few minutes of your interview, please stop the interview and email 
+                  <a href="mailto:hello@job-bolt.com">hello@job-bolt.com</a> with your full name and the interview link provided above. Please also describe the problem.</p>
+                  <br>
+                  <p>When you're ready, click your interview link to get started. Good luck!</p>
+                  <br>
+                  <p>Best,<br>
+                  The Job-Bolt Team</p>
+                `
+              };
+            })
+          };
+      
+          console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
+      
+          const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+          console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
+      
+          return response;
         } catch (error) {
-            console.error('[BREVO ERROR] Full error:', {
-                message: error.message,
-                response: error.response?.text,
-                body: error.response?.body
-            });
-            
-            throw new Error(`Brevo API Error: ${error.message}`);
+          console.error('[BREVO ERROR] Full error:', {
+            message: error.message,
+            response: error.response?.text,
+            body: error.response?.body
+          });
+      
+          throw new Error(`Brevo API Error: ${error.message}`);
         }
-    }
+      }
+      
+    
 }
