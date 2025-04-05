@@ -1,26 +1,20 @@
-import Brevo from '@getbrevo/brevo';
+import axios from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export default class BrevoService {
-    constructor() {
-        if (!process.env.BREVO_API_KEY) {
-            throw new Error('BREVO_API_KEY is not configured');
-        }
-
-        // Initialize the API client
-        const defaultClient = Brevo.ApiClient.instance;
-        this.apiKey = defaultClient.authentications['api-key'];
-        this.apiKey.apiKey = process.env.BREVO_API_KEY;
-
-        this.apiInstance = new Brevo.TransactionalEmailsApi();
+  constructor() {
+    if (!process.env.BREVO_API_KEY) {
+      throw new Error('BREVO_API_KEY is not configured');
     }
 
-    /**
-     * Sends bulk emails with individual passwords to candidates.
-     * @param {string[]} emails - List of recipient emails.
-     * @param {string[]} passwords - Corresponding list of passwords.
-     * @param {string} url - Interview link to include in the email.
-     * @returns {Promise<Object>} - API response from Brevo.
-     */
+    if (!process.env.QUOTAGUARDSTATIC_URL) {
+      throw new Error('QUOTAGUARDSTATIC_URL is not configured');
+    }
+
+    this.apiKey = process.env.BREVO_API_KEY;
+    this.proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARDSTATIC_URL);
+    this.apiUrl = 'https://api.brevo.com/v3/smtp/email';
+  }
     async sendBulkEmailsWithPasswords(emails, passwords, url, companyName, roleName) {
         try {
           if (!emails || !Array.isArray(emails)) {
@@ -99,7 +93,13 @@ export default class BrevoService {
       
           console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
       
-          const response = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+          const response = await axios.post(this.apiUrl, sendSmtpEmail, {
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': this.apiKey
+            },
+            httpsAgent: this.proxyAgent
+          });
           console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
       
           return response;
