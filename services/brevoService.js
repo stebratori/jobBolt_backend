@@ -91,7 +91,6 @@ export default class BrevoService {
             })
           };
       
-          console.log('[BREVO DEBUG] Sending request:', JSON.stringify(sendSmtpEmail, null, 2));
       
           const response = await axios.post(this.apiUrl, sendSmtpEmail, {
             headers: {
@@ -100,14 +99,17 @@ export default class BrevoService {
             },
             httpsAgent: this.proxyAgent
           });
-          console.log('[BREVO DEBUG] Success response:', JSON.stringify(response, null, 2));
+          console.log('[BREVO DEBUG] Success response:', {
+            status: response.status,
+            data: response.data
+          });
       
           return response;
         } catch (error) {
           console.error('[BREVO ERROR] Full error:', {
             message: error.message,
-            response: error.response?.text,
-            body: error.response?.body
+            status: error.response?.status,
+            data: error.response?.data
           });
       
           throw new Error(`Brevo API Error: ${error.message}`);
