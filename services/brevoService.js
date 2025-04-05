@@ -99,20 +99,13 @@ export default class BrevoService {
             },
             httpsAgent: this.proxyAgent
           });
-          console.log('[BREVO DEBUG] Success response:', {
-            status: response.status,
-            data: response.data
-          });
+          console.log('[BREVO] Email sending success');
       
           return response;
         } catch (error) {
-          console.error('[BREVO ERROR] Full error:', {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data
-          });
+          console.error('[BREVO ERROR] Email sending error');
       
-          throw new Error(`Brevo API Error: ${error.message}`);
+          throw new Error(`Brevo API Error`);
         }
       }
       
